@@ -31,6 +31,10 @@ public class GameManager : MonoBehaviour
 
     public GamePhase CurrentPhase { get; private set; }
 
+    public GameObject testPrefab;
+
+
+
     private void Awake()
     {
         if (Instance == null)
@@ -47,6 +51,13 @@ public class GameManager : MonoBehaviour
     {
         InitializeGame();
     }
+
+    public void setStatus(int maxHP, int maxCost)
+    {
+        _maxHp = maxHP;
+        _maxCost = maxCost;
+    }
+
 
     /// <summary>
     /// ゲーム開始時の初期化処理

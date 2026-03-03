@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 /// <summary>
 /// 盤面の生成とマス目(Tile)の管理を行うクラス
@@ -20,6 +21,10 @@ public class BoardManager : MonoBehaviour
     // 座標ごとのマスの参照を保持する辞書
     private Dictionary<Vector2Int, Tile> _tiles;
 
+    private int[,] boardData;
+
+    public GameManager gameManager;
+
     private void Awake()
     {
         if (Instance == null)
@@ -34,7 +39,46 @@ public class BoardManager : MonoBehaviour
 
     private void Start()
     {
+        LoadStage(1);
         GenerateGrid();
+    }
+
+    public void LoadStage(int stageNumber)
+    {
+        string filename = "map" + stageNumber;
+
+        TextAsset mapText = Resources.Load<TextAsset>(filename);
+
+        if(mapText != null)
+        {
+            ParseMapData(mapText.text);
+            Debug.Log(filename + " の読み込みに成功しました。");
+        } else
+        {
+            Debug.LogError(filename + "が見つかりません");
+        }
+    }
+
+    public void ParseMapData(string text)
+    {
+        
+        string[] lines = text.Split(new[] {'\n', '\r'}, StringSplitOptions.RemoveEmptyEntries);
+        _height = lines.Length - 1;
+        _width = lines[1].Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Length;
+        boardData = new int[_width, _height];
+
+        string[] value1 = lines[0].Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+        gameManager.setStatus(int.Parse(value1[0]), int.Parse(value1[1]));
+
+        for (int y = 0; y < _height; y++)
+        {
+            string[] values = lines[y+1].Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+
+            for(int x = 0; x < _width; x++)
+            {
+                boardData[x, y] = int.Parse(values[x]);
+            }
+        }
     }
 
     /// <summary>
@@ -48,16 +92,20 @@ public class BoardManager : MonoBehaviour
         {
             for (int y = 0; y < _height; y++)
             {
-                // タイルを生成 (X, Yの座標に配置)
-                var spawnedTile = Instantiate(_tilePrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
-                spawnedTile.name = $"Tile {x} {y}";
+                if(boardData[x, y] == 1)
+                {
+                    // タイルを生成 (X, Yの座標に配置)
+                    var spawnedTile = Instantiate(_tilePrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
+                    spawnedTile.name = $"Tile {x} {y}";
 
-                // 背景色がきれいに交互になるようにフラグを渡す（市松模様）
-                var isOffset = (x % 2 == 0 && y % 2 != 0) || (x % 2 != 0 && y % 2 == 0);
-                spawnedTile.Init(isOffset, new Vector2Int(x, y));
+                    // 背景色がきれいに交互になるようにフラグを渡す（市松模様）
+                    var isOffset = (x % 2 == 0 && y % 2 != 0) || (x % 2 != 0 && y % 2 == 0);
+                    spawnedTile.Init(isOffset, new Vector2Int(x, y));
 
-                // 辞書に登録
-                _tiles[new Vector2Int(x, y)] = spawnedTile;
+                    // 辞書に登録
+                    _tiles[new Vector2Int(x, y)] = spawnedTile;
+                }
+                
             }
         }
 
