@@ -14,6 +14,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private int _width = 5;
     [SerializeField] private int _height = 5;
     [SerializeField] private Tile _tilePrefab;
+    [SerializeField] private EnemyUnit _enemyPrefab; 
     
     [Header("カメラ関連")]
     [SerializeField] private Transform _cameraTransform;
@@ -92,7 +93,7 @@ public class BoardManager : MonoBehaviour
         {
             for (int y = 0; y < _height; y++)
             {
-                if(boardData[x, y] == 1)
+                if(boardData[x, y] >= 1)
                 {
                     // タイルを生成 (X, Yの座標に配置)
                     var spawnedTile = Instantiate(_tilePrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
@@ -105,7 +106,17 @@ public class BoardManager : MonoBehaviour
                     // 辞書に登録
                     _tiles[new Vector2Int(x, y)] = spawnedTile;
                 }
-                
+                // ★ もし数字が2だったら、「敵」も生成してタイルの上に配置する
+                if (boardData[x, y] == 2)
+                {
+                    // 敵のプレハブを生成
+                    var enemy = Instantiate(_enemyPrefab, new Vector3(x, y, 0), Quaternion.identity);
+
+                    // Unit.cs にある Init() メソッドを使って座標を初期化
+                    enemy.Init(new Vector2Int(x, y));
+                    // 【とても重要】 RuleSystem に「ここに敵がいるよ」と登録する
+                    RuleSystem.Instance.RegisterUnit(enemy);
+                }
             }
         }
 

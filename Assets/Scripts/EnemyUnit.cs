@@ -14,7 +14,8 @@ public class EnemyUnit : Unit
     [SerializeField] private int _maxHp = 2;
 
     [Header("UI参照")]
-    [SerializeField] private TextMeshPro _statusText; // 「2/2」のように表示するテキスト
+    [SerializeField] private TextMeshPro _statusATKText;
+    [SerializeField] private TextMeshPro _statusHPText;
 
     public int CurrentHp { get; private set; }
     public int AttackPower => _attackPower;
@@ -67,9 +68,14 @@ public class EnemyUnit : Unit
 
     private void UpdateStatusText()
     {
-        if (_statusText != null)
+        if (_statusATKText != null)
         {
-            _statusText.text = $"{_attackPower} / {CurrentHp}";
+            _statusATKText.text = _attackPower.ToString();
+        }
+
+        if (_statusHPText != null)
+        {
+            _statusHPText.text = CurrentHp.ToString();
         }
     }
 }
