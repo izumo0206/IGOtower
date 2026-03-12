@@ -33,6 +33,8 @@ public class GameManager : MonoBehaviour
 
     public GameObject testPrefab;
 
+    public BoardManager boardManager;
+
 
 
     private void Awake()
@@ -52,11 +54,34 @@ public class GameManager : MonoBehaviour
         InitializeGame();
     }
 
+    private void Update()
+    {
+        if(CurrentPhase == GamePhase.PlayerTurn){
+            if (Input.GetMouseButtonDown(0))
+            {
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+
+                if(Physics.Raycast(ray, out hit))
+                {
+                    Debug.Log("Update動いてます！");
+                    int x = (int)Mathf.Round(hit.point.x);
+                    int y = (int)Mathf.Round(hit.point.y);
+
+                    boardManager.SetAlly(x, y);
+
+                }
+            }
+        }
+    }
+
     public void setStatus(int maxHP, int maxCost)
     {
         _maxHp = maxHP;
         _maxCost = maxCost;
     }
+
+    
 
 
     /// <summary>

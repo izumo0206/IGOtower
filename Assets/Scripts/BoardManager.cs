@@ -15,6 +15,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private int _height = 5;
     [SerializeField] private Tile _tilePrefab;
     [SerializeField] private EnemyUnit _enemyPrefab; 
+    [SerializeField] private AllyUnit _allyPrefab;
     
     [Header("カメラ関連")]
     [SerializeField] private Transform _cameraTransform;
@@ -42,6 +43,13 @@ public class BoardManager : MonoBehaviour
     {
         LoadStage(1);
         GenerateGrid();
+    }
+
+    public void SetAlly(int x, int y)
+    {
+        var ally = Instantiate(_allyPrefab, new Vector3(x, y, 0), Quaternion.identity);
+        ally.Init(new Vector2Int(x, y));
+        RuleSystem.Instance.RegisterUnit(ally);
     }
 
     public void LoadStage(int stageNumber)
