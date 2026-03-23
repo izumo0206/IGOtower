@@ -68,7 +68,21 @@ public class GameManager : MonoBehaviour
                     int x = (int)Mathf.Round(hit.point.x);
                     int y = (int)Mathf.Round(hit.point.y);
 
-                    boardManager.SetAlly(x, y);
+                    Vector2Int pos = new Vector2Int(x, y);
+
+                    // RuleSystemを使って「ここに味方を置けるか？」をチェック
+                    if (RuleSystem.Instance.CanPlaceAlly(pos))
+                    {
+                        boardManager.SetAlly(x, y);
+                        Debug.Log($"({x}, {y}) に味方を配置しました！");
+                        
+                        // ※ もし配置後にターンを終了させるならここで EndPlayerTurn() を呼びます
+                        // EndPlayerTurn();
+                    }
+                    else
+                    {
+                        Debug.Log("そこには配置できません（盤面外、または既に何かが置かれています）");
+                    }
 
                 }
             }
