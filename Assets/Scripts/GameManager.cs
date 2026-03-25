@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 /// <summary>
 /// ゲームの進行状態（フェーズ）を表す列挙型
@@ -29,11 +30,20 @@ public class GameManager : MonoBehaviour
     public int CurrentHp { get; private set; }
     public int RemainingCost { get; private set; }
 
+    public bool AlreadySet = false;
+
     public GamePhase CurrentPhase { get; private set; }
 
     public GameObject testPrefab;
 
     public BoardManager boardManager;
+
+    public GameObject highlightSquareAble;
+    public GameObject highlightSquareUnable; 
+    public Collider boardCollider;
+
+    public GameObject cutInPanel;
+    public TextMeshProUGUI cutInText;
 
 
 
@@ -56,6 +66,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        HighLight();
         if(CurrentPhase == GamePhase.PlayerTurn){
             if (Input.GetMouseButtonDown(0))
             {
@@ -64,26 +75,95 @@ public class GameManager : MonoBehaviour
 
                 if(Physics.Raycast(ray, out hit))
                 {
-                    Debug.Log("Update動いてます！");
-                    int x = (int)Mathf.Round(hit.point.x);
-                    int y = (int)Mathf.Round(hit.point.y);
-
-                    Vector2Int pos = new Vector2Int(x, y);
-
-                    // RuleSystemを使って「ここに味方を置けるか？」をチェック
-                    if (RuleSystem.Instance.CanPlaceAlly(pos))
+                    if(AlreadySet == false)
                     {
-                        boardManager.SetAlly(x, y);
-                        Debug.Log($"({x}, {y}) に味方を配置しました！");
-                        
-                        // ※ もし配置後にターンを終了させるならここで EndPlayerTurn() を呼びます
-                        // EndPlayerTurn();
-                    }
+                        if(RemainingCost >= 2/*選択したコマのコスト(仮)*/)
+                        {
+                            int x = (int)Mathf.Round(hit.point.x);
+                            int y = (int)Mathf.Round(hit.point.y);
+
+                            Vector2Int pos = new Vector2Int(x, y);
+
+                            // RuleSystemを使って「ここに味方を置けるか？」をチェック
+                            if (RuleSystem.Instance.CanPlaceAlly(pos))
+                            {
+                                TryConsumeCost(2/*選択したコマのコスト(仮)*/);
+                                boardManager.SetAlly(x, y);
+                                Debug.Log($"({x}, {y}) に味方を配置しました！");
+                                AlreadySet = true;
+                                
+                                // ※ もし配置後にターンを終了させるならここで EndPlayerTurn() を呼びます
+                                // EndPlayerTurn();
+                            }
+                            else
+                            {
+                                Debug.Log("そこには配置できません（盤面外、または既に何かが置かれています）");
+                            }
+                        } 
+                        else
+                        {
+                            Debug.Log("コストが足りません");
+                        }
+                    } 
                     else
                     {
-                        Debug.Log("そこには配置できません（盤面外、または既に何かが置かれています）");
+                        Debug.Log("すでにコマを配置しています");
                     }
+                }
+            }
+        }
+    }
 
+    public void HighLight()
+    {
+        if(CurrentPhase == GamePhase.PlayerTurn)
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            if (boardCollider.Raycast(ray, out hit, 100f))
+            {
+                float x = Mathf.Round(hit.point.x);
+                float y = Mathf.Round(hit.point.y);
+
+                Vector2Int pos = new Vector2Int((int)x, (int)y);
+
+                if(AlreadySet == false && RemainingCost >= 2 && RuleSystem.Instance.CanPlaceAlly(pos)){
+
+                    highlightSquareAble.transform.position = new Vector2(x, y);
+
+                    if (!highlightSquareAble.activeSelf)
+                    {
+                        highlightSquareAble.SetActive(true);
+                    }
+                    if (highlightSquareUnable.activeSelf)
+                    {
+                        highlightSquareUnable.SetActive(false);
+                    }
+                } else
+                {
+                    highlightSquareUnable.transform.position = new Vector2(x, y);
+
+                    if (!highlightSquareUnable.activeSelf)
+                    {
+                        highlightSquareUnable.SetActive(true);
+                    }
+                    if (highlightSquareAble.activeSelf)
+                    {
+                        highlightSquareAble.SetActive(false);
+                    }
+                }
+            } 
+            else
+            {
+                if (highlightSquareAble.activeSelf)
+                {
+                    highlightSquareAble.SetActive(false);
+                }
+
+                if (highlightSquareUnable.activeSelf)
+                {
+                    highlightSquareUnable.SetActive(false);
                 }
             }
         }
@@ -119,6 +199,16 @@ public class GameManager : MonoBehaviour
         ChangePhase(GamePhase.PlayerTurn);
     }
 
+    private IEnumerator ShowCutInRoutine()
+    {
+        cutInPanel.SetActive(true);
+        
+        // アニメーションが終わるまで待つ（例: 2秒）
+        yield return new WaitForSeconds(2.0f);
+        
+        cutInPanel.SetActive(false);
+    }
+
     /// <summary>
     /// フェーズを遷移させる
     /// </summary>
@@ -131,6 +221,11 @@ public class GameManager : MonoBehaviour
         {
             case GamePhase.PlayerTurn:
                 // TODO: プレイヤーの入力（駒の配置）を受け付ける状態にする
+                cutInText.text = "YOUR TURN";
+                cutInText.color = Color.white;
+                StartCoroutine(ShowCutInRoutine());
+                AlreadySet = false;
+                
                 break;
 
             case GamePhase.ExecuteAllySkills:
