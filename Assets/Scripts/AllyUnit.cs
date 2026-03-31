@@ -6,19 +6,50 @@ using TMPro;
 
 public class AllyUnit : Unit
 {
-    [Header("味方ステータス")]
-    [SerializeField] private int _attackPower = 2;
-    [SerializeField] private int _maxHp = 2;
+    [Header("表示設定")]
+    [Tooltip("キャラクター画像を表示するSpriteRenderer（子オブジェクトのSquareなど）")]
+    [SerializeField] private SpriteRenderer _unitSpriteRenderer;
+
+    [Header("ユニットデータ")]
+    [SerializeField] private AllyUnitData _unitData;
 
     public int CurrentHp { get; private set; }
-    public int AttackPower => _attackPower;
+    
+    // データから各種ステータスを参照（データがない場合の対策付き）
+    public int AttackPower => _unitData != null ? _unitData.attackPower : 0;
+    public int Cost => _unitData != null ? _unitData.cost : 0;
+    
+    // データからIDやスキル種別を取得できるようにプロパティを公開
+    public string UnitId => _unitData != null ? _unitData.unitId : "";
+    public SkillType Skill => _unitData != null ? _unitData.skillType : SkillType.None;
 
     public static event Action<AllyUnit> OnAllyDestroyed;
 
     private void Awake()
     {
         _unitType = UnitType.Ally;
-        CurrentHp = _maxHp;
+        
+        // データが設定されているかチェック
+        if (_unitData != null)
+        {
+            CurrentHp = _unitData.maxHp;
+
+            // 画像の差し替え処理
+            if (_unitSpriteRenderer == null)
+            {
+                // インスペクターでアタッチし忘れた時のための自動取得
+                _unitSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            }
+
+            if (_unitSpriteRenderer != null && _unitData.unitSprite != null)
+            {
+                _unitSpriteRenderer.sprite = _unitData.unitSprite;
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"{gameObject.name} に UnitData がアタッチされていません！", this);
+        }
     }
 
     public override void Init(Vector2Int position)
@@ -50,5 +81,39 @@ public class AllyUnit : Unit
     private void UpdateStatusText()
     {
     
+    }
+
+    /// <summary>
+    /// ユニットデータのスキル種別に基づいた特別な挙動（例）
+    /// 実際のゲーム内の攻撃フェーズ等から呼び出して使います。
+    /// </summary>
+    public void ExecuteSkill()
+    {
+        if (_unitData == null) return;
+
+        switch (_unitData.skillType)
+        {
+            case SkillType.None:
+                // 特になし
+                break;
+            case SkillType.EnDa1:
+                Debug.Log($"{_unitData.unitName} は 入場時指定方向1マスに攻撃 を発動した！"); 
+                break;
+            case SkillType.EnDaAll:
+                Debug.Log($"{_unitData.unitName} は 入場時周囲すべてに攻撃 を発動した！");
+                break;
+            case SkillType.EnHe:
+                Debug.Log($"{_unitData.unitName} は 入場時自分のリーダーを回復 を発動した！");
+                break;
+            case SkillType.ExDa1:
+                Debug.Log($"{_unitData.unitName} は 終了時指定方向1マスに攻撃 を発動した！");
+                break;
+            case SkillType.ExDaAll:
+                Debug.Log($"{_unitData.unitName} は 終了時周囲すべてに攻撃 を発動した！");
+                break;
+            case SkillType.ExHe:
+                Debug.Log($"{_unitData.unitName} は 終了時自分のリーダーを回復 を発動した！");
+                break;
+        }
     }
 }
