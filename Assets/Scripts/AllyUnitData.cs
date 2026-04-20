@@ -34,6 +34,8 @@ public class AllyUnitData : ScriptableObject
     [Header("挙動設定")]
     [Tooltip("このユニットの機能・スキル種別")]
     public SkillType skillType = SkillType.None;
+
+    public AllyUnit prefab;
     
     // 必要周辺データ（プレハブなど）もここに追加できます
     // public GameObject prefab;

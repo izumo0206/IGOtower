@@ -63,13 +63,13 @@ public class RuleSystem : MonoBehaviour
     /// <summary>
     /// 特定のマスに味方の駒を配置できるか判定する
     /// </summary>
-    public bool CanPlaceAlly(Vector2Int pos)
+    public int CanPlaceAlly(Vector2Int pos)
     {
         // 1. 盤面外なら配置不可
-        if (!BoardManager.Instance.IsValidPosition(pos)) return false;
+        if (!BoardManager.Instance.IsValidPosition(pos)) return 0;
 
         // 2. すでに何か駒が置いてあれば配置不可
-        if (_pieces.ContainsKey(pos)) return false;
+        if (_pieces.ContainsKey(pos)) return 1;
 
         // 3. 四方を敵に囲まれている場合は配置不可
         int enemyCount = 0;
@@ -89,10 +89,10 @@ public class RuleSystem : MonoBehaviour
         // 四方が敵 (4つの隣接マスすべてに敵がいる) なら配置不可
         if (enemyCount >= 4)
         {
-            return false;
+            return 2;
         }
 
-        return true;
+        return 3;
     }
 
     /// <summary>

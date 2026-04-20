@@ -11,7 +11,7 @@ public class AllyUnit : Unit
     [SerializeField] private SpriteRenderer _unitSpriteRenderer;
 
     [Header("ユニットデータ")]
-    [SerializeField] private AllyUnitData _unitData;
+    [SerializeField] protected AllyUnitData _unitData;
 
     public int CurrentHp { get; private set; }
     
@@ -80,40 +80,19 @@ public class AllyUnit : Unit
 
     private void UpdateStatusText()
     {
-    
+        
     }
+
+    public virtual void OnPlaced() { }
+
+    // ターン開始時
+    public virtual void OnTurnStart() { }
+
+    // ターン終了時
+    public virtual void OnTurnEnd() { }
 
     /// <summary>
     /// ユニットデータのスキル種別に基づいた特別な挙動（例）
     /// 実際のゲーム内の攻撃フェーズ等から呼び出して使います。
     /// </summary>
-    public void ExecuteSkill()
-    {
-        if (_unitData == null) return;
-
-        switch (_unitData.skillType)
-        {
-            case SkillType.None:
-                // 特になし
-                break;
-            case SkillType.EnDa1:
-                Debug.Log($"{_unitData.unitName} は 入場時指定方向1マスに攻撃 を発動した！"); 
-                break;
-            case SkillType.EnDaAll:
-                Debug.Log($"{_unitData.unitName} は 入場時周囲すべてに攻撃 を発動した！");
-                break;
-            case SkillType.EnHe:
-                Debug.Log($"{_unitData.unitName} は 入場時自分のリーダーを回復 を発動した！");
-                break;
-            case SkillType.ExDa1:
-                Debug.Log($"{_unitData.unitName} は 終了時指定方向1マスに攻撃 を発動した！");
-                break;
-            case SkillType.ExDaAll:
-                Debug.Log($"{_unitData.unitName} は 終了時周囲すべてに攻撃 を発動した！");
-                break;
-            case SkillType.ExHe:
-                Debug.Log($"{_unitData.unitName} は 終了時自分のリーダーを回復 を発動した！");
-                break;
-        }
-    }
 }

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
@@ -45,6 +46,13 @@ public class GameManager : MonoBehaviour
     public GameObject cutInPanel;
     public TextMeshProUGUI cutInText;
 
+    private int currentIndex = 0;
+
+    public TextMeshProUGUI nameDisplay;
+
+    public Image iconDisplay;
+
+    public List<AllyUnitData> allyUnits = new List<AllyUnitData>();
 
 
     private void Awake()
@@ -62,6 +70,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         InitializeGame();
+        UpdateSelectionUI();
     }
 
     private void Update()
@@ -77,7 +86,8 @@ public class GameManager : MonoBehaviour
                 {
                     if(AlreadySet == false)
                     {
-                        if(RemainingCost >= 2/*選択したコマのコスト(仮)*/)
+
+                        if(RemainingCost >= allyUnits[currentIndex].cost/*選択したコマのコスト*/)
                         {
                             int x = (int)Mathf.Round(hit.point.x);
                             int y = (int)Mathf.Round(hit.point.y);
@@ -85,19 +95,21 @@ public class GameManager : MonoBehaviour
                             Vector2Int pos = new Vector2Int(x, y);
 
                             // RuleSystemを使って「ここに味方を置けるか？」をチェック
-                            if (RuleSystem.Instance.CanPlaceAlly(pos))
+                            if (RuleSystem.Instance.CanPlaceAlly(pos) == 3)
                             {
-                                TryConsumeCost(2/*選択したコマのコスト(仮)*/);
-                                boardManager.SetAlly(x, y);
+                                TryConsumeCost(allyUnits[currentIndex].cost/*選択したコマのコスト*/);
+                                boardManager.SetAlly(x, y, currentIndex);
                                 Debug.Log($"({x}, {y}) に味方を配置しました！");
                                 AlreadySet = true;
+
+
                                 
                                 // ※ もし配置後にターンを終了させるならここで EndPlayerTurn() を呼びます
                                 // EndPlayerTurn();
                             }
-                            else
+                            else if(RuleSystem.Instance.CanPlaceAlly(pos) != 0)
                             {
-                                Debug.Log("そこには配置できません（盤面外、または既に何かが置かれています）");
+                                Debug.Log("そこには配置できません");
                             }
                         } 
                         else
@@ -128,7 +140,20 @@ public class GameManager : MonoBehaviour
 
                 Vector2Int pos = new Vector2Int((int)x, (int)y);
 
-                if(AlreadySet == false && RemainingCost >= 2 && RuleSystem.Instance.CanPlaceAlly(pos)){
+                if(RuleSystem.Instance.CanPlaceAlly(pos) == 0){
+                    if (highlightSquareAble.activeSelf)
+                    {
+                        highlightSquareAble.SetActive(false);
+                    }
+
+                    if (highlightSquareUnable.activeSelf)
+                    {
+                        highlightSquareUnable.SetActive(false);
+                    }
+                    return;
+                }
+
+                if(AlreadySet == false && RemainingCost >= 2 && RuleSystem.Instance.CanPlaceAlly(pos) == 3){
 
                     highlightSquareAble.transform.position = new Vector2(x, y);
 
@@ -230,6 +255,13 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.ExecuteAllySkills:
                 // TODO: 「ターン終了時効果」を持つ味方ユニットのスキルを一斉発動する
+                var allies = FindObjectsOfType<AllyUnit>();
+
+                foreach (var ally in allies)
+                {
+                    ally.OnTurnEnd();
+
+                }
                 // 発動完了後、EnemyTurnへ
                 ChangePhase(GamePhase.EnemyTurn);
                 break;
@@ -257,6 +289,8 @@ public class GameManager : MonoBehaviour
         if (CurrentPhase != GamePhase.PlayerTurn) return;
 
         // 味方のスキル発動フェーズへ移行（今回は仮で直接敵ターンに行くなどの処理はChangePhaseに委譲）
+
+
         ChangePhase(GamePhase.ExecuteAllySkills);
     }
 
@@ -286,6 +320,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void ActivateSkill()
+    {
+        
+
+    }
+
     public void TakeDamage(int damage)
     {
         CurrentHp -= damage;
@@ -311,6 +351,37 @@ public class GameManager : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public void NextPiece()
+    {
+        currentIndex = (currentIndex + 1) % allyUnits.Count;
+        UpdateSelectionUI();
+    }
+    public void PrevPiece()
+    {
+        currentIndex--;
+        if(currentIndex < 0)
+        {
+            currentIndex = allyUnits.Count - 1;
+        }
+        UpdateSelectionUI();
+    }
+
+
+    void UpdateSelectionUI()
+    {
+        nameDisplay.text = allyUnits[currentIndex].name;
+
+        if (iconDisplay != null && allyUnits[currentIndex].unitSprite != null)
+        {
+            iconDisplay.sprite = allyUnits[currentIndex].unitSprite;
+        }
+    }
+
+    public int GetSelected()
+    {
+        return currentIndex;
     }
 
     // ---------------- 以下、スタブ（後でUnitクラスと連携） ----------------
