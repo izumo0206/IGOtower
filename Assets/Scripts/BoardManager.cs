@@ -50,10 +50,14 @@ public class BoardManager : MonoBehaviour
     {
         AllyUnitData currentData = gameManager.allyUnits[index];
 
-        AllyUnit prefabToInstantiate = currentData.prefab;
+        GameObject prefabToInstantiate = currentData.prefab;
 
-
-        var ally = Instantiate(prefabToInstantiate, new Vector3(x, y, 0), Quaternion.identity);
+        var go = Instantiate(prefabToInstantiate, new Vector3(x, y, 0), Quaternion.identity);
+        var ally = go.GetComponent<AllyUnit>();
+        
+        // ★ 生成したユニットに「あなたはどのユニットデータか」を教える
+        ally.SetupData(currentData);
+        
         ally.Init(new Vector2Int(x, y));
 
         ally.OnPlaced();

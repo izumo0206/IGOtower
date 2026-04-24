@@ -28,8 +28,15 @@ public class AllyUnit : Unit
     private void Awake()
     {
         _unitType = UnitType.Ally;
-        
-        // データが設定されているかチェック
+    }
+
+    /// <summary>
+    /// 生成された直後にBoardManagerからユニットデータを渡される
+    /// </summary>
+    public void SetupData(AllyUnitData data)
+    {
+        _unitData = data;
+
         if (_unitData != null)
         {
             CurrentHp = _unitData.maxHp;
@@ -37,18 +44,30 @@ public class AllyUnit : Unit
             // 画像の差し替え処理
             if (_unitSpriteRenderer == null)
             {
-                // インスペクターでアタッチし忘れた時のための自動取得
                 _unitSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
             }
 
             if (_unitSpriteRenderer != null && _unitData.unitSprite != null)
             {
                 _unitSpriteRenderer.sprite = _unitData.unitSprite;
+
+                // 【追加】どんな大きさの画像でも1マス（1x1）に収まるように自動縮小・拡大する
+                _unitSpriteRenderer.transform.localScale = Vector3.one; // 一旦スケールをリセット
+                Vector2 spriteSize = _unitSpriteRenderer.sprite.bounds.size;
+                
+                // 縦横で大きい方に合わせてスケールを計算（アスペクト比を維持）
+                float maxBound = Mathf.Max(spriteSize.x, spriteSize.y);
+                if (maxBound > 0)
+                {
+                    float scale = 1f / maxBound;
+                    // マス目からはみ出ないように少しだけ余白を持たせるなら 0.9f を掛ける
+                    _unitSpriteRenderer.transform.localScale = new Vector3(scale * 0.9f, scale * 0.9f, 1f);
+                }
             }
         }
         else
         {
-            Debug.LogWarning($"{gameObject.name} に UnitData がアタッチされていません！", this);
+            Debug.LogWarning($"{gameObject.name} に UnitData が渡されていません！", this);
         }
     }
 
@@ -59,8 +78,85 @@ public class AllyUnit : Unit
     }
 
     /// <summary>
+    /// BoardManagerから配置完了時に呼ばれる処理
+    /// </summary>
+    public void OnPlaced()
+    {
+        // ユニットの初期化（配置）が完了したタイミングで、「入場時スキル」を持っていれば発動する
+        if (_unitData != null && _unitData.skillTiming == SkillTiming.OnPlaced)
+        {
+            ExecuteSkill();
+        }
+    }
+
+    /// <summary>
     /// スキルダメージを受ける処理
     /// </summary>
+
+    /// <summary>
+    /// GameManagerの ExecuteAllySkills フェーズなどから毎ターン終了時に呼ばれる処理
+    /// </summary>
+    public void OnTurnEnd()
+    {
+        // ターン終了時スキルを持っていれば発動する
+        if (_unitData != null && _unitData.skillTiming == SkillTiming.OnTurnEnd)
+        {
+            ExecuteSkill();
+        }
+    }
+
+    /// <summary>
+    /// ユニットデータのスキル種別に基づいた処理の実行
+    /// </summary>
+    private void ExecuteSkill()
+    {
+        if (_unitData == null) return;
+
+        switch (_unitData.skillType)
+        {
+            case SkillType.None:
+                // 特になし
+                break;
+
+            case SkillType.AttackOneDir:
+                // ※方向指定の実装は後日行うため、現在は仮で「上(Up)」方向の1マスを攻撃対象とします
+                Vector2Int targetPos = GridPosition + Vector2Int.up;
+                Unit target = RuleSystem.Instance.GetUnitAt(targetPos);
+                
+                if (target != null && target is EnemyUnit enemy)
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({targetPos})の敵に {AttackPower} ダメージ！");
+                    enemy.TakeDamage(AttackPower);
+                }
+                else
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：しかし攻撃方向に敵はいなかった");
+                }
+                break;
+
+            case SkillType.AttackAllSurround:
+                Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：周囲全てに攻撃！");
+                Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+                foreach (var dir in dirs)
+                {
+                    Unit neighbor = RuleSystem.Instance.GetUnitAt(GridPosition + dir);
+                    if (neighbor != null && neighbor is EnemyUnit surroundEnemy)
+                    {
+                        surroundEnemy.TakeDamage(AttackPower);
+                    }
+                }
+                break;
+
+            case SkillType.HealLeader:
+                Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：自分のリーダーを {AttackPower} 回復！");
+                if (GameManager.Instance != null)
+                {
+                    // GameManagerのHeal機能を使ってプレイヤーのHPを攻撃力分回復させる
+                    GameManager.Instance.Heal(AttackPower);
+                }
+                break;
+        }
+    }
 
     /// <summary>
     /// 囲碁のルール（4方向囲み）によって破壊される処理
@@ -83,16 +179,5 @@ public class AllyUnit : Unit
         
     }
 
-    public virtual void OnPlaced() { }
 
-    // ターン開始時
-    public virtual void OnTurnStart() { }
-
-    // ターン終了時
-    public virtual void OnTurnEnd() { }
-
-    /// <summary>
-    /// ユニットデータのスキル種別に基づいた特別な挙動（例）
-    /// 実際のゲーム内の攻撃フェーズ等から呼び出して使います。
-    /// </summary>
 }

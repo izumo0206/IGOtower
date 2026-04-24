@@ -1,15 +1,20 @@
 using UnityEngine;
 
-// 後に拡張しやすいように列挙型(Enum)でスキルの種類を定義します
+// スキルの発動タイミング
+public enum SkillTiming
+{
+    None,
+    OnPlaced,   // 配置した瞬間に発動
+    OnTurnEnd   // ターン終了時に発動
+}
+
+// スキルの種類（Ally001〜006の機能を統合）
 public enum SkillType
 {
-    None,       // スキルなし（基本ユニット）
-    EnDa1,     // [入場時]指定方向1マスに攻撃
-    EnDaAll,     // [入場時]周囲すべてに攻撃
-    EnHe,     // [入場時]自分のリーダーを回復
-    ExDa1,     // [終了時]指定方向1マスに攻撃
-    ExDaAll,     // [終了時]周囲すべてに攻撃
-    ExHe      // [終了時]自分のリーダーを回復
+    None,
+    AttackOneDir,       // 指定方向１マスに攻撃
+    AttackAllSurround,  // 周囲全てに攻撃
+    HealLeader          // 自分のリーダーを回復
 }
 
 [CreateAssetMenu(fileName = "NewAllyUnitData", menuName = "UnitData/AllyUnitData")]
@@ -24,6 +29,8 @@ public class AllyUnitData : ScriptableObject
     public Sprite unitSprite;
     [Tooltip("配置コスト")]
     public int cost = 1;
+    [Tooltip("生成用プレハブ")]
+    public GameObject prefab;
 
     [Header("ステータス")]
     [Tooltip("最大HP")]
@@ -32,11 +39,45 @@ public class AllyUnitData : ScriptableObject
     public int attackPower = 2;
 
     [Header("挙動設定")]
-    [Tooltip("このユニットの機能・スキル種別")]
+    [Tooltip("スキルの発動タイミング")]
+    public SkillTiming skillTiming = SkillTiming.None;
+    [Tooltip("スキルの種類")]
     public SkillType skillType = SkillType.None;
 
-    public AllyUnit prefab;
-    
-    // 必要周辺データ（プレハブなど）もここに追加できます
-    // public GameObject prefab;
+    /// <summary>
+    /// UI表示用の詳細テキストを生成して返す
+    /// </summary>
+    public string GetDescription()
+    {
+        // 攻撃力の数字を別の色（オレンジ色等）にするためのTextMeshProリッチテキストタグ
+        string powText = $"<color=#FF7F50>{attackPower}</color>";
+
+        string desc = $"コスト: {cost}   HP: {maxHp}   POWER: {powText}\n";
+        
+        if (skillType == SkillType.None)
+        {
+            desc += "スキル: なし";
+            return desc;
+        }
+
+        string timingStr = skillTiming == SkillTiming.OnPlaced ? "【入場時】" : "【ターン終了時】";
+        string effectStr = "";
+        switch (skillType)
+        {
+            case SkillType.AttackOneDir: 
+                effectStr = $"指定方向1マスの敵に {powText} ダメージ"; 
+                break;
+            case SkillType.AttackAllSurround: 
+                effectStr = $"周囲の敵すべてに {powText} ダメージ"; 
+                break;
+            case SkillType.HealLeader: 
+                // 回復スキルの数字も色を変える場合（例：緑色）
+                string healText = $"<color=#32CD32>{attackPower}</color>";
+                effectStr = $"プレイヤーのHPを {healText} 回復"; 
+                break;
+        }
+
+        desc += $"スキル: {timingStr}\n{effectStr}";
+        return desc;
+    }
 }

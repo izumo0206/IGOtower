@@ -52,6 +52,18 @@ public class RuleSystem : MonoBehaviour
         CheckSurroundings(unit.GridPosition);
     }
 
+    /// <summary>
+    /// 指定された座標にいるユニットを取得する
+    /// </summary>
+    public Unit GetUnitAt(Vector2Int pos)
+    {
+        if (_pieces.TryGetValue(pos, out Unit unit))
+        {
+            return unit;
+        }
+        return null;
+    }
+
     private void HandleEnemyDestroyed(EnemyUnit enemy)
     {
         if (_pieces.ContainsKey(enemy.GridPosition))

@@ -52,6 +52,8 @@ public class GameManager : MonoBehaviour
 
     public Image iconDisplay;
 
+    public TextMeshProUGUI infoDisplay; // 追加：スキル・ステータス詳細表示用
+
     public List<AllyUnitData> allyUnits = new List<AllyUnitData>();
 
 
@@ -371,11 +373,17 @@ public class GameManager : MonoBehaviour
 
     void UpdateSelectionUI()
     {
-        nameDisplay.text = allyUnits[currentIndex].name;
+        // ScriptableObject自体の名前(.name)ではなく、設定した unitName を使うと綺麗です
+        nameDisplay.text = allyUnits[currentIndex].unitName;
 
         if (iconDisplay != null && allyUnits[currentIndex].unitSprite != null)
         {
             iconDisplay.sprite = allyUnits[currentIndex].unitSprite;
+        }
+
+        if (infoDisplay != null)
+        {
+            infoDisplay.text = allyUnits[currentIndex].GetDescription();
         }
     }
 
