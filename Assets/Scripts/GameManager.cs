@@ -28,6 +28,22 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _maxHp = 10;
     [SerializeField] private int _maxCost = 7;
 
+    public enum PlacementPhase
+    {
+        SelectingCell,      // 1. 場所を選んでいる状態
+        SelectingDirection  // 2. 向きを選んでいる状態
+    }
+
+    [Header("配置システム")]
+    public PlacementPhase currentPlacePhase = PlacementPhase.SelectingCell;
+    
+    // 仮置き中のコマを覚えておく変数
+    private AllyUnit pendingUnit; 
+
+    // 出現させる矢印UIのプレハブ
+    public GameObject directionUIPrefab; 
+    private GameObject currentDirectionUI;
+
     public int CurrentHp { get; private set; }
     public int RemainingCost { get; private set; }
 
@@ -56,6 +72,8 @@ public class GameManager : MonoBehaviour
 
     public List<AllyUnitData> allyUnits = new List<AllyUnitData>();
 
+    public CanvasGroup mainUICanvasGroup;
+
 
     private void Awake()
     {
@@ -81,6 +99,7 @@ public class GameManager : MonoBehaviour
         if(CurrentPhase == GamePhase.PlayerTurn){
             if (Input.GetMouseButtonDown(0))
             {
+                if (currentPlacePhase == PlacementPhase.SelectingDirection) return;
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
 
@@ -99,10 +118,20 @@ public class GameManager : MonoBehaviour
                             // RuleSystemを使って「ここに味方を置けるか？」をチェック
                             if (RuleSystem.Instance.CanPlaceAlly(pos) == 3)
                             {
-                                TryConsumeCost(allyUnits[currentIndex].cost/*選択したコマのコスト*/);
-                                boardManager.SetAlly(x, y, currentIndex);
-                                Debug.Log($"({x}, {y}) に味方を配置しました！");
-                                AlreadySet = true;
+                                if(currentPlacePhase == PlacementPhase.SelectingCell){
+                                    
+                                    pendingUnit = boardManager.SpawnPreviewAlly(x,y,currentIndex);
+
+                                    ShowDirectionUI(new Vector3(x, y, 0));
+                                    currentPlacePhase = PlacementPhase.SelectingDirection;
+
+                                    if (mainUICanvasGroup != null)
+                                    {
+                                        mainUICanvasGroup.interactable = false;   // ボタンなどを一斉に無効化
+                                        mainUICanvasGroup.blocksRaycasts = false; // クリックの当たり判定を無くす
+                                        mainUICanvasGroup.alpha = 0.5f;           // 全体を半透明（暗く）する
+                                    }
+                                }
 
 
                                 
@@ -130,6 +159,7 @@ public class GameManager : MonoBehaviour
 
     public void HighLight()
     {
+        if (currentPlacePhase == PlacementPhase.SelectingDirection) return;
         if(CurrentPhase == GamePhase.PlayerTurn)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -200,6 +230,67 @@ public class GameManager : MonoBehaviour
     {
         _maxHp = maxHP;
         _maxCost = maxCost;
+    }
+
+    private void ShowDirectionUI(Vector3 position)
+    {
+        HideDirectionUI();
+
+        currentDirectionUI = Instantiate(directionUIPrefab, position, Quaternion.identity);
+    }
+
+    private void HideDirectionUI()
+    {
+        if(currentDirectionUI != null)
+        {
+            Destroy(currentDirectionUI);
+            currentDirectionUI = null;
+        }
+    }
+
+    public void OnDirectionSelected(UnitDirection dir)
+    {
+        if(pendingUnit != null)
+        {
+            boardManager.FinalizeAlly(pendingUnit, dir);
+
+            HideDirectionUI();
+            pendingUnit = null;
+
+            TryConsumeCost(allyUnits[currentIndex].cost/*選択したコマのコスト*/);
+            AlreadySet = true;
+
+            if (mainUICanvasGroup != null)
+            {
+                mainUICanvasGroup.interactable = true;
+                mainUICanvasGroup.blocksRaycasts = true;
+                mainUICanvasGroup.alpha = 1.0f; // 透明度を100%（くっきり）に戻す
+            }
+
+            currentPlacePhase = PlacementPhase.SelectingCell;
+
+
+        }
+    }
+
+    public void CancelPlacement()
+    {
+        if(pendingUnit != null)
+        {
+            Destroy(pendingUnit.gameObject);
+            pendingUnit = null;
+        }
+
+        HideDirectionUI();
+
+        if(mainUICanvasGroup != null)
+        {
+            mainUICanvasGroup.interactable = true;
+            mainUICanvasGroup.blocksRaycasts = true;
+            mainUICanvasGroup.alpha = 1.0f;
+        }
+
+        currentPlacePhase = PlacementPhase.SelectingCell;
     }
 
     

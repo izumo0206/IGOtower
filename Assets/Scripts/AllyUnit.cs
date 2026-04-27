@@ -4,6 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
+public enum UnitDirection
+{
+    Up,
+    Right,
+    Down,
+    Left
+}
+
 public class AllyUnit : Unit
 {
     [Header("表示設定")]
@@ -12,6 +20,9 @@ public class AllyUnit : Unit
 
     [Header("ユニットデータ")]
     [SerializeField] protected AllyUnitData _unitData;
+
+    [Header("現在の状態")]
+    public UnitDirection currentDirection = UnitDirection.Up;
 
     public int CurrentHp { get; private set; }
     
@@ -121,6 +132,14 @@ public class AllyUnit : Unit
             case SkillType.AttackOneDir:
                 // ※方向指定の実装は後日行うため、現在は仮で「上(Up)」方向の1マスを攻撃対象とします
                 Vector2Int targetPos = GridPosition + Vector2Int.up;
+                switch (currentDirection)
+                {
+                    case UnitDirection.Up: targetPos = GridPosition + Vector2Int.up; break;
+                    case UnitDirection.Right: targetPos = GridPosition + Vector2Int.right; break;
+                    case UnitDirection.Down: targetPos = GridPosition + Vector2Int.down; break;
+                    case UnitDirection.Left: targetPos = GridPosition + Vector2Int.left; break;
+                }
+                
                 Unit target = RuleSystem.Instance.GetUnitAt(targetPos);
                 
                 if (target != null && target is EnemyUnit enemy)
@@ -177,6 +196,35 @@ public class AllyUnit : Unit
     private void UpdateStatusText()
     {
         
+    }
+
+    public void SetDirection(UnitDirection newDirection)
+    {
+        currentDirection = newDirection;
+
+        float zAngle = 0f;
+        switch (currentDirection)
+        {
+            case UnitDirection.Up: zAngle = 0f; break;
+            case UnitDirection.Right: zAngle = -90f; break;
+            case UnitDirection.Down: zAngle = 180f; break;
+            case UnitDirection.Left: zAngle = 90f; break;
+        }
+
+        if(_unitSpriteRenderer != null)
+        {
+            _unitSpriteRenderer.transform.localRotation = Quaternion.Euler(0,0,zAngle);
+        }
+    }
+
+    public void SetAlpha(float alpha)
+    {
+        if(_unitSpriteRenderer != null)
+        {
+            Color currentColor = _unitSpriteRenderer.color;
+            currentColor.a = alpha;
+            _unitSpriteRenderer.color = currentColor;
+        }
     }
 
 

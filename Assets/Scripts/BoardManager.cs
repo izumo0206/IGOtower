@@ -46,7 +46,7 @@ public class BoardManager : MonoBehaviour
         GenerateGrid();
     }
 
-    public void SetAlly(int x, int y, int index)
+    public AllyUnit SpawnPreviewAlly(int x, int y, int index)
     {
         AllyUnitData currentData = gameManager.allyUnits[index];
 
@@ -60,8 +60,18 @@ public class BoardManager : MonoBehaviour
         
         ally.Init(new Vector2Int(x, y));
 
-        ally.OnPlaced();
+        ally.SetAlpha(0.5f);
 
+        return ally;
+    }
+
+    public void FinalizeAlly(AllyUnit ally, UnitDirection dir)
+    {
+        ally.SetDirection(dir);
+
+        ally.SetAlpha(1.0f);
+
+        ally.OnPlaced();
         RuleSystem.Instance.RegisterUnit(ally);
     }
 
