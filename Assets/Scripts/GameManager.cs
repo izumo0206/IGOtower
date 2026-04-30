@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
@@ -61,6 +62,10 @@ public class GameManager : MonoBehaviour
 
     public GameObject cutInPanel;
     public TextMeshProUGUI cutInText;
+
+    [Header("リザルト画面")]
+    public GameObject gameClearPanel;
+    public GameObject gameOverPanel;
 
     private int currentIndex = 0;
 
@@ -305,6 +310,10 @@ public class GameManager : MonoBehaviour
         CurrentHp = _maxHp;
         RemainingCost = _maxCost;
 
+        // UIパネルを非表示にしておく
+        if (gameClearPanel != null) gameClearPanel.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
         Debug.Log($"ゲーム開始！ HP: {CurrentHp}, コスト: {RemainingCost}");
         
         // 開発用：少し待ってからプレイヤーターンへ
@@ -366,12 +375,33 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.GameClear:
                 Debug.Log("GAME CLEAR!!");
+                if (gameClearPanel != null) gameClearPanel.SetActive(true);
                 break;
 
             case GamePhase.GameOver:
                 Debug.Log("GAME OVER...");
+                if (gameOverPanel != null) gameOverPanel.SetActive(true);
                 break;
         }
+    }
+
+    /// <summary>
+    /// 現在のステージをもう一度やり直す（UIボタンから呼び出す用）
+    /// </summary>
+    public void RetryStage()
+    {
+        // 現在開いているシーンを再度読み込む
+        string currentScene = SceneManager.GetActiveScene().name;
+        SceneManager.LoadScene(currentScene);
+    }
+
+    /// <summary>
+    /// ステージ選択画面に戻る（UIボタンから呼び出す用）
+    /// </summary>
+    public void ReturnToStageSelect()
+    {
+        // 仮のシーン名を設定しています。実際のステージ選択シーン名と一致させてください。
+        SceneManager.LoadScene("StageSelect");
     }
 
     /// <summary>
