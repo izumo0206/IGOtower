@@ -42,7 +42,14 @@ public class BoardManager : MonoBehaviour
 
     private void Start()
     {
-        LoadStage(1);
+        if (!string.IsNullOrEmpty(GameManager.selectedStageText))
+        {
+            ParseMapData(GameManager.selectedStageText);
+            GameManager.selectedStageText = null;
+        } else
+        {
+            LoadStage(1);
+        }
         GenerateGrid();
     }
 

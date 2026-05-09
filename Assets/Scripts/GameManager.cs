@@ -23,6 +23,7 @@ public enum GamePhase
 /// </summary>
 public class GameManager : MonoBehaviour
 {
+    public static string selectedStageText;
     public static GameManager Instance { get; private set; }
 
     [Header("プレイヤーステータス")]
