@@ -20,6 +20,17 @@ public class EnemyUnit : Unit
     public int CurrentHp { get; private set; }
     public int AttackPower => _attackPower;
 
+    /// <summary>
+    /// 攻撃力を指定した数値だけ下げる（デバフ）
+    /// 下限は0（マイナスにはならない）
+    /// </summary>
+    public void DebuffAttack(int amount)
+    {
+        _attackPower = Mathf.Max(0, _attackPower - amount);
+        Debug.Log($"敵の攻撃力が {amount} 下がった。現在の攻撃力: {_attackPower}");
+        UpdateStatusText();
+    }
+
     public static event Action<EnemyUnit> OnEnemyDestroyed;
 
     private void Awake()

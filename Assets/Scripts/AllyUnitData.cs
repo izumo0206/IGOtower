@@ -14,7 +14,9 @@ public enum SkillType
     None,
     AttackOneDir,       // 指定方向１マスに攻撃
     AttackAllSurround,  // 周囲全てに攻撃
-    HealLeader          // 自分のリーダーを回復
+    HealLeader,         // 自分のリーダーを回復
+    DebuffOneDir,       // 指定方向１マスの敵の攻撃力を下げる
+    DebuffAllSurround   // 周囲全ての敵の攻撃力を下げる
 }
 
 [CreateAssetMenu(fileName = "NewAllyUnitData", menuName = "UnitData/AllyUnitData")]
@@ -74,6 +76,14 @@ public class AllyUnitData : ScriptableObject
                 // 回復スキルの数字も色を変える場合（例：緑色）
                 string healText = $"<color=#32CD32>{attackPower}</color>";
                 effectStr = $"プレイヤーのHPを {healText} 回復"; 
+                break;
+            case SkillType.DebuffOneDir:
+                string debuff1Text = $"<color=#9B59B6>{attackPower}</color>";
+                effectStr = $"指定方向1マスの敵の攻撃力を {debuff1Text} 下げる";
+                break;
+            case SkillType.DebuffAllSurround:
+                string debuffAllText = $"<color=#9B59B6>{attackPower}</color>";
+                effectStr = $"周囲の敵すべての攻撃力を {debuffAllText} 下げる";
                 break;
         }
 

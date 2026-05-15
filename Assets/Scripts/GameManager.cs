@@ -401,8 +401,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void ReturnToStageSelect()
     {
-        // 仮のシーン名を設定しています。実際のステージ選択シーン名と一致させてください。
-        SceneManager.LoadScene("StageSelect");
+        SceneManager.LoadScene("SelectStage");
     }
 
     /// <summary>

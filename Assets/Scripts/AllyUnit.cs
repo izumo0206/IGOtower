@@ -174,6 +174,43 @@ public class AllyUnit : Unit
                     GameManager.Instance.Heal(AttackPower);
                 }
                 break;
+
+            case SkillType.DebuffOneDir:
+                // 指定方向の1マスの敵の攻撃力を下げる
+                Vector2Int debuffTargetPos = GridPosition;
+                switch (currentDirection)
+                {
+                    case UnitDirection.Up:    debuffTargetPos = GridPosition + Vector2Int.up;    break;
+                    case UnitDirection.Right: debuffTargetPos = GridPosition + Vector2Int.right; break;
+                    case UnitDirection.Down:  debuffTargetPos = GridPosition + Vector2Int.down;  break;
+                    case UnitDirection.Left:  debuffTargetPos = GridPosition + Vector2Int.left;  break;
+                }
+
+                Unit debuffTarget = RuleSystem.Instance.GetUnitAt(debuffTargetPos);
+                if (debuffTarget != null && debuffTarget is EnemyUnit debuffEnemy)
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({debuffTargetPos})の敵の攻撃力を {AttackPower} 下げる！");
+                    debuffEnemy.DebuffAttack(AttackPower);
+                }
+                else
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：方向に敵はいなかった");
+                }
+                break;
+
+            case SkillType.DebuffAllSurround:
+                // 周囲4方向の敵全員の攻撃力を下げる
+                Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：周囲全ての敵の攻撃力を {AttackPower} 下げる！");
+                Vector2Int[] debuffDirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+                foreach (var dir in debuffDirs)
+                {
+                    Unit neighbor = RuleSystem.Instance.GetUnitAt(GridPosition + dir);
+                    if (neighbor != null && neighbor is EnemyUnit surroundDebuffEnemy)
+                    {
+                        surroundDebuffEnemy.DebuffAttack(AttackPower);
+                    }
+                }
+                break;
         }
     }
 

@@ -84,7 +84,7 @@ public class BoardManager : MonoBehaviour
 
     public void LoadStage(int stageNumber)
     {
-        string filename = "map" + stageNumber;
+        string filename = "Stage/map" + stageNumber;
 
         TextAsset mapText = Resources.Load<TextAsset>(filename);
 
