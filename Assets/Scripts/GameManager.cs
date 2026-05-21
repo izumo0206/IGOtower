@@ -24,6 +24,7 @@ public enum GamePhase
 public class GameManager : MonoBehaviour
 {
     public static string selectedStageText;
+    public static string currentStageName;
     public static GameManager Instance { get; private set; }
 
     [Header("プレイヤーステータス")]
@@ -260,6 +261,8 @@ public class GameManager : MonoBehaviour
         {
             boardManager.FinalizeAlly(pendingUnit, dir);
 
+            pendingUnit.PlayPlaceEffect(); 
+
             HideDirectionUI();
             pendingUnit = null;
 
@@ -272,6 +275,8 @@ public class GameManager : MonoBehaviour
                 mainUICanvasGroup.blocksRaycasts = true;
                 mainUICanvasGroup.alpha = 1.0f; // 透明度を100%（くっきり）に戻す
             }
+                
+            
 
             currentPlacePhase = PlacementPhase.SelectingCell;
 
@@ -377,6 +382,15 @@ public class GameManager : MonoBehaviour
             case GamePhase.GameClear:
                 Debug.Log("GAME CLEAR!!");
                 if (gameClearPanel != null) gameClearPanel.SetActive(true);
+                if (!string.IsNullOrEmpty(GameManager.currentStageName))
+                {
+                    string saveKey = GameManager.currentStageName + "_Cleared";
+                    PlayerPrefs.SetInt(saveKey, 1);
+                    
+                    PlayerPrefs.Save(); 
+                    
+                    Debug.Log(GameManager.currentStageName + " のクリアデータを保存しました！");
+                }
                 break;
 
             case GamePhase.GameOver:

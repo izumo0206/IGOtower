@@ -100,6 +100,38 @@ public class AllyUnit : Unit
         }
     }
 
+    public void PlayPlaceEffect()
+    {
+        Debug.Log("エフェクト開始！");
+        StartCoroutine(ThudAnimation());
+    }
+
+    private IEnumerator ThudAnimation()
+    {
+        // ★追加：最初に自分の「本来のサイズ」を記憶しておく！
+        Vector3 baseScale = transform.localScale;
+
+        // 本来のサイズの 1.2倍 にする
+        transform.localScale = baseScale * 1.2f;
+
+        float duration = 0.08f; 
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration; 
+
+            // 1.2倍のサイズから、元のサイズ(baseScale)へ徐々に戻す
+            transform.localScale = Vector3.Lerp(baseScale * 1.2f, baseScale, t);
+            
+            yield return null;
+        }
+
+        // 最後に確実に「記憶しておいた本来のサイズ」に戻す
+        transform.localScale = baseScale; 
+    }
+
     /// <summary>
     /// スキルダメージを受ける処理
     /// </summary>

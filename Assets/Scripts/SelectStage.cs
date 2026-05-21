@@ -18,10 +18,19 @@ public class SelectStage : MonoBehaviour
         {
             GameObject newButton = Instantiate(stageButtonPrefab, buttonContainer);
 
-            TextMeshProUGUI buttonText = newButton.GetComponentInChildren<TextMeshProUGUI>();
-            if(buttonText != null)
+            StageButton stageBtn = newButton.GetComponent<StageButton>();
+
+            if (stageBtn != null)
             {
-                buttonText.text = stageFile.name;
+                string saveKey = stageFile.name + "_Cleared";
+                bool isCleared = PlayerPrefs.GetInt(saveKey, 0) == 1;
+
+                stageBtn.Setup(stageFile.name, isCleared, () =>
+                {
+                    GameManager.currentStageName = stageFile.name; 
+
+                    OnStageButtonClicked(stageFile.text);
+                });
             }
 
             string mapData = stageFile.text;
@@ -36,7 +45,7 @@ public class SelectStage : MonoBehaviour
     {
         GameManager.selectedStageText = mapData;
 
-        SceneManager.LoadScene("MainScene");
+        FadeManager.Instance.TransitionToScene("MainScene");
     }
 
     // Update is called once per frame
