@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using UnityEngine;
 
 /// <summary>
@@ -50,6 +51,11 @@ public class RuleSystem : MonoBehaviour
     {
         _pieces[unit.GridPosition] = unit;
         CheckSurroundings(unit.GridPosition);
+    }
+
+    public void RemoveUnit(Unit unit)
+    {
+        _pieces.Remove(unit.GridPosition);
     }
 
     /// <summary>
@@ -105,6 +111,49 @@ public class RuleSystem : MonoBehaviour
         }
 
         return 3;
+    }
+
+    public bool CanSacrifice(Vector2Int pos)
+    {
+        // 1. 盤面外なら配置不可
+        if (!BoardManager.Instance.IsValidPosition(pos)) return false;
+
+        // 2. すでに何か駒が置いてあれば配置不可
+        if (_pieces.ContainsKey(pos))
+        {
+            Unit targetUnit = GetUnitAt(pos);
+            if (targetUnit is AllyUnit)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        // 3. 四方を敵に囲まれている場合は配置不可
+        int enemyCount = 0;
+        foreach (var dir in _directions)
+        {
+            Vector2Int neighborPos = pos + dir;
+            // 盤面の範囲内で、かつ敵ユニットが存在するか
+            if (_pieces.TryGetValue(neighborPos, out Unit neighborUnit))
+            {
+                if (neighborUnit.Type == UnitType.Enemy)
+                {
+                    enemyCount++;
+                }
+            }
+        }
+        
+        // 四方が敵 (4つの隣接マスすべてに敵がいる) なら配置不可
+        if (enemyCount >= 4)
+        {
+            return false;
+        }
+
+        return false;
     }
 
     /// <summary>

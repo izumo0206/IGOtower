@@ -25,6 +25,8 @@ public class AllyUnit : Unit
     public UnitDirection currentDirection = UnitDirection.Up;
 
     public int CurrentHp { get; private set; }
+
+
     
     // データから各種ステータスを参照（データがない場合の対策付き）
     public int AttackPower => _unitData != null ? _unitData.attackPower : 0;
@@ -47,6 +49,7 @@ public class AllyUnit : Unit
     public void SetupData(AllyUnitData data)
     {
         _unitData = data;
+
 
         if (_unitData != null)
         {
@@ -148,6 +151,33 @@ public class AllyUnit : Unit
         }
     }
 
+    public int Shield(int damage)
+    {
+        int damage2 = damage;
+        if (_unitData != null && _unitData.skillTiming == SkillTiming.Shield)
+        { 
+            Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のシールド発動！");
+            damage2 -= CurrentHp;
+            if(damage2 >= 0)
+            {
+                CurrentHp = 0;
+            }
+            else
+            {
+                CurrentHp -= damage2;
+                damage2 = 0;
+            }
+
+            if(CurrentHp <= 0)
+            {
+                Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} は倒れた...");
+                Die();
+            } 
+        }
+
+        return damage2;
+    }
+
     /// <summary>
     /// ユニットデータのスキル種別に基づいた処理の実行
     /// </summary>
@@ -243,6 +273,111 @@ public class AllyUnit : Unit
                     }
                 }
                 break;
+            
+            case SkillType.PushOneDir:
+                Vector2Int pushTargetPos = GridPosition;
+                Vector2Int pushDir = Vector2Int.up;
+                switch (currentDirection)
+                {
+                    case UnitDirection.Up:    
+                        pushTargetPos = GridPosition + Vector2Int.up;  
+                        pushDir = Vector2Int.up;  
+                        break;
+                    case UnitDirection.Right: 
+                        pushTargetPos = GridPosition + Vector2Int.right; 
+                        pushDir = Vector2Int.right;
+                        break;
+                    case UnitDirection.Down:  
+                        pushTargetPos = GridPosition + Vector2Int.down;
+                        pushDir = Vector2Int.down;  
+                        break;
+                    case UnitDirection.Left:  
+                        pushTargetPos = GridPosition + Vector2Int.left; 
+                        pushDir = Vector2Int.left; 
+                        break;
+                }
+
+                Unit pushTarget = RuleSystem.Instance.GetUnitAt(pushTargetPos);
+                if (pushTarget != null && pushTarget is EnemyUnit pushEnemy)
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({pushTargetPos})の敵を {AttackPower} マス押し出す！");
+                    pushEnemy.Pushed(AttackPower, pushDir);
+                }
+                else
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：方向に敵はいなかった");
+                }
+                break;
+
+            case SkillType.PullOneDir:
+                Vector2Int pullTargetPos = GridPosition;
+                Vector2Int pullDir = Vector2Int.up;
+                switch (currentDirection)
+                {
+                    case UnitDirection.Up:    
+                        pullTargetPos = GridPosition + Vector2Int.up * 2;  
+                        pullDir = Vector2Int.up;  
+                        break;
+                    case UnitDirection.Right: 
+                        pullTargetPos = GridPosition + Vector2Int.right * 2; 
+                        pullDir = Vector2Int.right;
+                        break;
+                    case UnitDirection.Down:  
+                        pullTargetPos = GridPosition + Vector2Int.down * 2;
+                        pullDir = Vector2Int.down;  
+                        break;
+                    case UnitDirection.Left:  
+                        pullTargetPos = GridPosition + Vector2Int.left * 2; 
+                        pullDir = Vector2Int.left; 
+                        break;
+                }
+
+                Unit pullTarget = RuleSystem.Instance.GetUnitAt(pullTargetPos);
+                if (pullTarget != null && pullTarget is EnemyUnit pullEnemy)
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({pullTargetPos})の敵を {AttackPower} マス引き寄せる！");
+                    pullEnemy.Pulled(AttackPower, pullDir);
+                }
+                else
+                {
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：方向に敵はいなかった");
+                }
+                break;
+            
+            case SkillType.AttackOneLane:
+                Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：周囲全てに攻撃！");
+                Vector2Int attackOLDir = Vector2Int.up;
+                switch (currentDirection)
+                {
+                    case UnitDirection.Up:    
+                        attackOLDir = Vector2Int.up;  
+                        break;
+                    case UnitDirection.Right: 
+                        attackOLDir = Vector2Int.right;
+                        break;
+                    case UnitDirection.Down:  
+                        attackOLDir = Vector2Int.down;  
+                        break;
+                    case UnitDirection.Left:  
+                        attackOLDir = Vector2Int.left; 
+                        break;
+                }
+                List<Vector2Int> attackOLTargetPos = new List<Vector2Int>{};
+                Vector2Int currentPos = GridPosition + attackOLDir;
+                while (BoardManager.Instance.IsValidPosition(currentPos))
+                {
+                    attackOLTargetPos.Add(currentPos);
+                    currentPos += attackOLDir;
+                }
+                for (int i=0; i<attackOLTargetPos.Count; i++)
+                {
+                    Unit currentTarget = RuleSystem.Instance.GetUnitAt(attackOLTargetPos[i]);
+                    if (currentTarget != null && currentTarget is EnemyUnit targetEnemy)
+                    {
+                        targetEnemy.TakeDamage(AttackPower);
+                    }
+                }
+                break;
         }
     }
 
@@ -265,6 +400,12 @@ public class AllyUnit : Unit
     private void UpdateStatusText()
     {
         
+    }
+
+    public void Sacrificed()
+    {
+        Debug.Log($"{_unitData.name} は犠牲になった");
+        Die();
     }
 
     public void SetDirection(UnitDirection newDirection)

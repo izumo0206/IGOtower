@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 // スキルの発動タイミング
@@ -5,7 +6,9 @@ public enum SkillTiming
 {
     None,
     OnPlaced,   // 配置した瞬間に発動
-    OnTurnEnd   // ターン終了時に発動
+    OnTurnEnd,   // ターン終了時に発動
+    Shield
+
 }
 
 // スキルの種類（Ally001〜006の機能を統合）
@@ -14,9 +17,20 @@ public enum SkillType
     None,
     AttackOneDir,       // 指定方向１マスに攻撃
     AttackAllSurround,  // 周囲全てに攻撃
+    AttackOneLane,      // 指定方向一列に貫通攻撃
     HealLeader,         // 自分のリーダーを回復
     DebuffOneDir,       // 指定方向１マスの敵の攻撃力を下げる
-    DebuffAllSurround   // 周囲全ての敵の攻撃力を下げる
+    DebuffAllSurround,  // 周囲全ての敵の攻撃力を下げる
+    PushOneDir,         // 指定方向１マスの敵を押し出す
+    PullOneDir,          // 指定方向２マスの敵を引き寄せる
+    Shield
+}
+
+public enum HowToPut
+{
+    None,
+    Sacrifice            // 味方の上から配置
+
 }
 
 [CreateAssetMenu(fileName = "NewAllyUnitData", menuName = "UnitData/AllyUnitData")]
@@ -40,11 +54,14 @@ public class AllyUnitData : ScriptableObject
     [Tooltip("攻撃力")]
     public int attackPower = 2;
 
+
     [Header("挙動設定")]
     [Tooltip("スキルの発動タイミング")]
     public SkillTiming skillTiming = SkillTiming.None;
     [Tooltip("スキルの種類")]
     public SkillType skillType = SkillType.None;
+    [Tooltip("配置方法")]
+    public HowToPut howToPut = HowToPut.None;
 
     /// <summary>
     /// UI表示用の詳細テキストを生成して返す
@@ -72,6 +89,9 @@ public class AllyUnitData : ScriptableObject
             case SkillType.AttackAllSurround: 
                 effectStr = $"周囲の敵すべてに {powText} ダメージ"; 
                 break;
+            case SkillType.AttackOneLane:
+                effectStr = $"指定方向一列に {powText} ダメージ";
+                break;
             case SkillType.HealLeader: 
                 // 回復スキルの数字も色を変える場合（例：緑色）
                 string healText = $"<color=#32CD32>{attackPower}</color>";
@@ -84,6 +104,16 @@ public class AllyUnitData : ScriptableObject
             case SkillType.DebuffAllSurround:
                 string debuffAllText = $"<color=#9B59B6>{attackPower}</color>";
                 effectStr = $"周囲の敵すべての攻撃力を {debuffAllText} 下げる";
+                break;
+            case SkillType.PushOneDir:
+                effectStr = $"指定方向１マスの敵を {powText} マス押し出す";
+                break;
+            case SkillType.PullOneDir:
+                effectStr = $"指定方向２マスの敵を {powText} マス引き寄せる";
+                break;
+            case SkillType.Shield:
+                string shieldText = $"<color=#FF7F50>{maxHp}</color>";
+                effectStr = $"シールド 体力： {shieldText} ";
                 break;
         }
 

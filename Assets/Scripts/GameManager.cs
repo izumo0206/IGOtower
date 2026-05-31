@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Data;
+using Unity.VisualScripting;
 
 /// <summary>
 /// ゲームの進行状態（フェーズ）を表す列挙型
@@ -81,6 +83,8 @@ public class GameManager : MonoBehaviour
 
     public CanvasGroup mainUICanvasGroup;
 
+    private Vector2Int _pendingGridPos;
+
 
     private void Awake()
     {
@@ -122,32 +126,60 @@ public class GameManager : MonoBehaviour
 
                             Vector2Int pos = new Vector2Int(x, y);
 
-                            // RuleSystemを使って「ここに味方を置けるか？」をチェック
-                            if (RuleSystem.Instance.CanPlaceAlly(pos) == 3)
-                            {
-                                if(currentPlacePhase == PlacementPhase.SelectingCell){
-                                    
-                                    pendingUnit = boardManager.SpawnPreviewAlly(x,y,currentIndex);
+                            switch (allyUnits[currentIndex].howToPut){
+                            case HowToPut.None:
+                                // RuleSystemを使って「ここに味方を置けるか？」をチェック
+                                if (RuleSystem.Instance.CanPlaceAlly(pos) == 3)
+                                {
+                                    if(currentPlacePhase == PlacementPhase.SelectingCell){
+                                        
+                                        pendingUnit = boardManager.SpawnPreviewAlly(x,y,currentIndex);
 
-                                    ShowDirectionUI(new Vector3(x, y, 0));
-                                    currentPlacePhase = PlacementPhase.SelectingDirection;
+                                        ShowDirectionUI(new Vector3(x, y, 0));
+                                        currentPlacePhase = PlacementPhase.SelectingDirection;
 
-                                    if (mainUICanvasGroup != null)
-                                    {
-                                        mainUICanvasGroup.interactable = false;   // ボタンなどを一斉に無効化
-                                        mainUICanvasGroup.blocksRaycasts = false; // クリックの当たり判定を無くす
-                                        mainUICanvasGroup.alpha = 0.5f;           // 全体を半透明（暗く）する
+                                        if (mainUICanvasGroup != null)
+                                        {
+                                            mainUICanvasGroup.interactable = false;   // ボタンなどを一斉に無効化
+                                            mainUICanvasGroup.blocksRaycasts = false; // クリックの当たり判定を無くす
+                                            mainUICanvasGroup.alpha = 0.5f;           // 全体を半透明（暗く）する
+                                        }
                                     }
+
+
+                                    
+                                    // ※ もし配置後にターンを終了させるならここで EndPlayerTurn() を呼びます
+                                    // EndPlayerTurn();
                                 }
+                                else if(RuleSystem.Instance.CanPlaceAlly(pos) != 0)
+                                {
+                                    Debug.Log("そこには配置できません");
+                                }
+                                break;
+                            case HowToPut.Sacrifice:
+                                    if (RuleSystem.Instance.CanSacrifice(pos))
+                                    {
+                                        if(currentPlacePhase == PlacementPhase.SelectingCell){
+                                        
+                                            pendingUnit = boardManager.SpawnPreviewAlly(x,y,currentIndex);
 
+                                            ShowDirectionUI(new Vector3(x, y, 0));
+                                            currentPlacePhase = PlacementPhase.SelectingDirection;
 
-                                
-                                // ※ もし配置後にターンを終了させるならここで EndPlayerTurn() を呼びます
-                                // EndPlayerTurn();
-                            }
-                            else if(RuleSystem.Instance.CanPlaceAlly(pos) != 0)
-                            {
-                                Debug.Log("そこには配置できません");
+                                            _pendingGridPos = pos;
+
+                                            if (mainUICanvasGroup != null)
+                                            {
+                                                mainUICanvasGroup.interactable = false;   // ボタンなどを一斉に無効化
+                                                mainUICanvasGroup.blocksRaycasts = false; // クリックの当たり判定を無くす
+                                                mainUICanvasGroup.alpha = 0.5f;           // 全体を半透明（暗く）する
+                                            }
+                                        }
+                                    }else
+                                    {
+                                        Debug.Log("そこには配置できません");
+                                    }
+                                break;
                             }
                         } 
                         else
@@ -259,6 +291,15 @@ public class GameManager : MonoBehaviour
     {
         if(pendingUnit != null)
         {
+
+            if(allyUnits[currentIndex].howToPut == HowToPut.Sacrifice)
+            {
+                Unit target = RuleSystem.Instance.GetUnitAt(_pendingGridPos);
+                AllyUnit ally = target as AllyUnit;
+                ally.Sacrificed();
+                
+            }
+
             boardManager.FinalizeAlly(pendingUnit, dir);
 
             pendingUnit.PlayPlaceEffect(); 
@@ -268,6 +309,7 @@ public class GameManager : MonoBehaviour
 
             TryConsumeCost(allyUnits[currentIndex].cost/*選択したコマのコスト*/);
             AlreadySet = true;
+
 
             if (mainUICanvasGroup != null)
             {
@@ -368,7 +410,6 @@ public class GameManager : MonoBehaviour
                 foreach (var ally in allies)
                 {
                     ally.OnTurnEnd();
-
                 }
                 // 発動完了後、EnemyTurnへ
                 ChangePhase(GamePhase.EnemyTurn);
@@ -376,7 +417,15 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.EnemyTurn:
                 // 敵の合計攻撃力を計算してプレイヤーにダメージを与える
-                ProcessEnemyAttacks();
+                var onEnemyTurnAllies = FindObjectsOfType<AllyUnit>();
+
+                int damage = CalculateTotalEnemyDamage();
+
+                foreach (var ally in onEnemyTurnAllies)
+                {
+                    damage = ally.Shield(damage);
+                }
+                ProcessEnemyAttacks(damage);
                 break;
 
             case GamePhase.GameClear:
@@ -434,12 +483,12 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// 敵ターン（ダメージ計算）の処理
     /// </summary>
-    private void ProcessEnemyAttacks()
+    private void ProcessEnemyAttacks(int damage)
     {
         // TODO: 盤面にいる全敵ユニットを取得し、攻撃力の合計を出す
-        int totalEnemyDamage = CalculateTotalEnemyDamage();
+        // int totalEnemyDamage = CalculateTotalEnemyDamage();
 
-        TakeDamage(totalEnemyDamage);
+        TakeDamage(damage);
 
         // 勝敗・進行の判定
         if (CurrentHp <= 0)

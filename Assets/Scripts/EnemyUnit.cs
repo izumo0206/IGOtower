@@ -2,7 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro; // ステータス表示用
+using TMPro;
+using System.Data; // ステータス表示用
 
 /// <summary>
 /// 敵ユニット（攻撃力と体力を持ち、毎ターンダメージを与えてくる）
@@ -29,6 +30,26 @@ public class EnemyUnit : Unit
         _attackPower = Mathf.Max(0, _attackPower - amount);
         Debug.Log($"敵の攻撃力が {amount} 下がった。現在の攻撃力: {_attackPower}");
         UpdateStatusText();
+    }
+
+    public void Pushed(int amount, Vector2Int direction)
+    {
+        Vector2Int position = GridPosition + amount * direction;
+        if(RuleSystem.Instance.CanPlaceAlly(position) == 3){
+            RuleSystem.Instance.RemoveUnit(this);
+            Init(position);
+            RuleSystem.Instance.RegisterUnit(this);
+        }
+    }
+
+    public void Pulled(int amount, Vector2Int direction)
+    {
+        Vector2Int position = GridPosition - amount * direction;
+        if(RuleSystem.Instance.CanPlaceAlly(position) == 3){
+            RuleSystem.Instance.RemoveUnit(this);
+            Init(position);
+            RuleSystem.Instance.RegisterUnit(this);
+        }
     }
 
     public static event Action<EnemyUnit> OnEnemyDestroyed;

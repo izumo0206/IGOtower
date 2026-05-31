@@ -17,7 +17,6 @@ public class SelectStage : MonoBehaviour
         foreach (TextAsset stageFile in stageFiles)
         {
             GameObject newButton = Instantiate(stageButtonPrefab, buttonContainer);
-
             StageButton stageBtn = newButton.GetComponent<StageButton>();
 
             if (stageBtn != null)
@@ -28,21 +27,15 @@ public class SelectStage : MonoBehaviour
                 stageBtn.Setup(stageFile.name, isCleared, () =>
                 {
                     GameManager.currentStageName = stageFile.name; 
-
                     OnStageButtonClicked(stageFile.text);
                 });
             }
-
-            string mapData = stageFile.text;
-            newButton.GetComponent<Button>().onClick.AddListener(() =>
-            {
-                OnStageButtonClicked(mapData);
-            });
         }
     }
 
     private void OnStageButtonClicked(string mapData)
     {
+        Debug.Log("【デバッグ】ボタンから送られたデータ: " + mapData);
         GameManager.selectedStageText = mapData;
 
         FadeManager.Instance.TransitionToScene("MainScene");
