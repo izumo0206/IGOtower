@@ -35,7 +35,6 @@ public class SelectStage : MonoBehaviour
 
     private void OnStageButtonClicked(string mapData)
     {
-        Debug.Log("【デバッグ】ボタンから送られたデータ: " + mapData);
         GameManager.selectedStageText = mapData;
 
         FadeManager.Instance.TransitionToScene("MainScene");

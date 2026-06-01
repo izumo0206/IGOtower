@@ -37,11 +37,13 @@ public class RuleSystem : MonoBehaviour
     private void OnEnable()
     {
         EnemyUnit.OnEnemyDestroyed += HandleEnemyDestroyed;
+        AllyUnit.OnAllyDestroyed += HandleAllyDestroyed;
     }
 
     private void OnDisable()
     {
         EnemyUnit.OnEnemyDestroyed -= HandleEnemyDestroyed;
+        AllyUnit.OnAllyDestroyed -= HandleAllyDestroyed;
     }
 
     /// <summary>
@@ -75,6 +77,14 @@ public class RuleSystem : MonoBehaviour
         if (_pieces.ContainsKey(enemy.GridPosition))
         {
             _pieces.Remove(enemy.GridPosition);
+        }
+    }
+
+    private void HandleAllyDestroyed(AllyUnit ally)
+    {
+        if (_pieces.ContainsKey(ally.GridPosition))
+        {
+            _pieces.Remove(ally.GridPosition);
         }
     }
 

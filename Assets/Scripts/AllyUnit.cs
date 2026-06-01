@@ -26,6 +26,8 @@ public class AllyUnit : Unit
 
     public int CurrentHp { get; private set; }
 
+    
+
 
     
     // データから各種ステータスを参照（データがない場合の対策付き）
@@ -37,6 +39,13 @@ public class AllyUnit : Unit
     public SkillType Skill => _unitData != null ? _unitData.skillType : SkillType.None;
 
     public static event Action<AllyUnit> OnAllyDestroyed;
+
+    [Header("演出用")]
+    public GameObject lightningEffectPrefab;
+    public GameObject healEffectPrefab;
+    public GameObject debuffEffectPrefab;
+    public GameObject dieEffectPrefab;
+    public GameObject shieldObject;
 
     private void Awake()
     {
@@ -154,8 +163,15 @@ public class AllyUnit : Unit
     public int Shield(int damage)
     {
         int damage2 = damage;
-        if (_unitData != null && _unitData.skillTiming == SkillTiming.Shield)
+        if (_unitData != null && _unitData.skillTiming == SkillTiming.Shield && damage > 0)
         { 
+            if (shieldObject != null)
+            {
+                shieldObject.SetActive(true);
+            
+            // ▼もし「2秒後に自動で消したい」場合は下のコルーチンを呼び出します
+                StartCoroutine(HideShieldAfterDelay(2.0f));
+            }
             Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のシールド発動！");
             damage2 -= CurrentHp;
             if(damage2 >= 0)
@@ -208,6 +224,15 @@ public class AllyUnit : Unit
                 {
                     Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({targetPos})の敵に {AttackPower} ダメージ！");
                     enemy.TakeDamage(AttackPower);
+                    if (lightningEffectPrefab != null)
+                    {
+                        Vector3Int effectPos = new Vector3Int(targetPos.x, targetPos.y, 0);
+                        // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                        GameObject effect = Instantiate(lightningEffectPrefab, effectPos, Quaternion.identity);
+
+                        // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                        Destroy(effect, 1.0f); 
+                    }
                 }
                 else
                 {
@@ -224,6 +249,15 @@ public class AllyUnit : Unit
                     if (neighbor != null && neighbor is EnemyUnit surroundEnemy)
                     {
                         surroundEnemy.TakeDamage(AttackPower);
+                        if (lightningEffectPrefab != null)
+                        {
+                            Vector3Int effectPos = new Vector3Int(surroundEnemy.GridPosition.x, surroundEnemy.GridPosition.y, 0);
+                            // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                            GameObject effect = Instantiate(lightningEffectPrefab, effectPos, Quaternion.identity);
+
+                            // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                            Destroy(effect, 1.0f); 
+                        }
                     }
                 }
                 break;
@@ -234,6 +268,15 @@ public class AllyUnit : Unit
                 {
                     // GameManagerのHeal機能を使ってプレイヤーのHPを攻撃力分回復させる
                     GameManager.Instance.Heal(AttackPower);
+                    if (healEffectPrefab != null)
+                    {
+                        Vector3 effectPos = new Vector3(0, -2, 0);
+                        // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                        GameObject effect = Instantiate(healEffectPrefab, effectPos, Quaternion.identity);
+
+                        // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                        Destroy(effect, 1.0f); 
+                    }
                 }
                 break;
 
@@ -252,6 +295,15 @@ public class AllyUnit : Unit
                 if (debuffTarget != null && debuffTarget is EnemyUnit debuffEnemy)
                 {
                     Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({debuffTargetPos})の敵の攻撃力を {AttackPower} 下げる！");
+                    if (lightningEffectPrefab != null)
+                    {
+                        Vector3Int effectPos = new Vector3Int(debuffTargetPos.x, debuffTargetPos.y, 0);
+                        // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                        GameObject effect = Instantiate(debuffEffectPrefab, effectPos, Quaternion.identity);
+
+                        // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                        Destroy(effect, 1.0f); 
+                    }
                     debuffEnemy.DebuffAttack(AttackPower);
                 }
                 else
@@ -269,6 +321,15 @@ public class AllyUnit : Unit
                     Unit neighbor = RuleSystem.Instance.GetUnitAt(GridPosition + dir);
                     if (neighbor != null && neighbor is EnemyUnit surroundDebuffEnemy)
                     {
+                        if (lightningEffectPrefab != null)
+                    {
+                        Vector3Int effectPos = new Vector3Int(surroundDebuffEnemy.GridPosition.x, surroundDebuffEnemy.GridPosition.y, 0);
+                        // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                        GameObject effect = Instantiate(debuffEffectPrefab, effectPos, Quaternion.identity);
+
+                        // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                        Destroy(effect, 1.0f); 
+                    }
                         surroundDebuffEnemy.DebuffAttack(AttackPower);
                     }
                 }
@@ -301,6 +362,7 @@ public class AllyUnit : Unit
                 if (pushTarget != null && pushTarget is EnemyUnit pushEnemy)
                 {
                     Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({pushTargetPos})の敵を {AttackPower} マス押し出す！");
+                    StartCoroutine(this.BumpAttack(pushEnemy.transform.position, 0.5f, 0.2f));
                     pushEnemy.Pushed(AttackPower, pushDir);
                 }
                 else
@@ -336,6 +398,7 @@ public class AllyUnit : Unit
                 if (pullTarget != null && pullTarget is EnemyUnit pullEnemy)
                 {
                     Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({pullTargetPos})の敵を {AttackPower} マス引き寄せる！");
+                    StartCoroutine(this.BumpAttack(pullEnemy.transform.position, -0.5f, 0.2f));
                     pullEnemy.Pulled(AttackPower, pullDir);
                 }
                 else
@@ -375,6 +438,15 @@ public class AllyUnit : Unit
                     if (currentTarget != null && currentTarget is EnemyUnit targetEnemy)
                     {
                         targetEnemy.TakeDamage(AttackPower);
+                        if (lightningEffectPrefab != null)
+                        {
+                            Vector3Int effectPos = new Vector3Int(targetEnemy.GridPosition.x, targetEnemy.GridPosition.y, 0);
+                            // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                            GameObject effect = Instantiate(lightningEffectPrefab, effectPos, Quaternion.identity);
+
+                            // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                            Destroy(effect, 1.0f); 
+                        }
                     }
                 }
                 break;
@@ -393,6 +465,14 @@ public class AllyUnit : Unit
     private void Die()
     {
         // 破壊イベントを発行（盤面からの登録解除や勝敗判定などに使う）
+        if (dieEffectPrefab != null)
+        {
+            Vector3Int effectPos = new Vector3Int(this.GridPosition.x, this.GridPosition.y, 0);
+            // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+            GameObject effect = Instantiate(dieEffectPrefab, effectPos, Quaternion.identity);
+
+            Destroy(effect, 1.0f); 
+        }
         OnAllyDestroyed?.Invoke(this);
         Destroy(gameObject);
     }
@@ -434,6 +514,16 @@ public class AllyUnit : Unit
             Color currentColor = _unitSpriteRenderer.color;
             currentColor.a = alpha;
             _unitSpriteRenderer.color = currentColor;
+        }
+    }
+
+    private IEnumerator HideShieldAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay); // 指定した秒数だけ待つ
+        
+        if (shieldObject != null)
+        {
+            shieldObject.SetActive(false); // 盾を隠す
         }
     }
 

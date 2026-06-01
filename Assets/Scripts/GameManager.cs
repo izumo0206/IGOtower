@@ -425,7 +425,13 @@ public class GameManager : MonoBehaviour
                 {
                     damage = ally.Shield(damage);
                 }
-                ProcessEnemyAttacks(damage);
+                if(damage > 0){  
+                    if (CameraShake.Instance != null)
+                    {
+                        CameraShake.Instance.Shake(0.2f, 0.1f);
+                    }
+                    ProcessEnemyAttacks(damage);
+                }
                 break;
 
             case GamePhase.GameClear:
@@ -443,6 +449,10 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GamePhase.GameOver:
+                if (CameraShake.Instance != null)
+                {
+                    CameraShake.Instance.Shake(0.5f, 0.5f);
+                }
                 Debug.Log("GAME OVER...");
                 if (gameOverPanel != null) gameOverPanel.SetActive(true);
                 break;
@@ -493,6 +503,7 @@ public class GameManager : MonoBehaviour
         // 勝敗・進行の判定
         if (CurrentHp <= 0)
         {
+            
             ChangePhase(GamePhase.GameOver);
         }
         else if (CheckAllEnemiesDefeated())
