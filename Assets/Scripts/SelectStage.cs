@@ -7,6 +7,11 @@ using UnityEngine.UI; // シーン移動のために必要
 
 public class SelectStage : MonoBehaviour
 {
+    [Header("効果音")]
+    public AudioClip buttonSound;
+    public AudioClip switchSound;
+
+
     public GameObject stageButtonPrefab;
     public Transform buttonContainer;
     // Start is called before the first frame update
@@ -35,6 +40,10 @@ public class SelectStage : MonoBehaviour
 
     private void OnStageButtonClicked(string mapData)
     {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySE(switchSound);
+        }
         GameManager.selectedStageText = mapData;
 
         FadeManager.Instance.TransitionToScene("MainScene");

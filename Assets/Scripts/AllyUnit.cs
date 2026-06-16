@@ -47,6 +47,13 @@ public class AllyUnit : Unit
     public GameObject dieEffectPrefab;
     public GameObject shieldObject;
 
+    [Header("効果音")]
+    public AudioClip attackSound;
+    public AudioClip debuffSound;
+    public AudioClip healSound;
+    public AudioClip defeatSound;
+    public AudioClip shieldSound;
+
     private void Awake()
     {
         _unitType = UnitType.Ally;
@@ -162,26 +169,31 @@ public class AllyUnit : Unit
 
     public int Shield(int damage)
     {
-        int damage2 = damage;
+        int remainingDamage = damage;
         if (_unitData != null && _unitData.skillTiming == SkillTiming.Shield && damage > 0)
         { 
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlaySE(shieldSound);
+            }
             if (shieldObject != null)
             {
                 shieldObject.SetActive(true);
             
-            // ▼もし「2秒後に自動で消したい」場合は下のコルーチンを呼び出します
-                StartCoroutine(HideShieldAfterDelay(2.0f));
+                StartCoroutine(HideShieldAfterDelay(1.0f));
             }
             Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のシールド発動！");
-            damage2 -= CurrentHp;
-            if(damage2 >= 0)
+            if (CurrentHp > remainingDamage)
             {
-                CurrentHp = 0;
+                // ① 味方のHPのほうが大きい場合
+                CurrentHp -= remainingDamage; // ダメージ分だけHPを減らす
+                remainingDamage = 0;          // 防ぎきったので貫通ダメージは0
             }
             else
             {
-                CurrentHp -= damage2;
-                damage2 = 0;
+                // ② 敵のダメージのほうが大きい場合
+                remainingDamage -= CurrentHp; // ダメージから味方の残りHP分を引く（これが貫通ダメージになる）
+                CurrentHp = 0;                // 味方はすべてのHPを使い果たして0になる
             }
 
             if(CurrentHp <= 0)
@@ -191,7 +203,7 @@ public class AllyUnit : Unit
             } 
         }
 
-        return damage2;
+        return remainingDamage;
     }
 
     /// <summary>
@@ -208,7 +220,6 @@ public class AllyUnit : Unit
                 break;
 
             case SkillType.AttackOneDir:
-                // ※方向指定の実装は後日行うため、現在は仮で「上(Up)」方向の1マスを攻撃対象とします
                 Vector2Int targetPos = GridPosition + Vector2Int.up;
                 switch (currentDirection)
                 {
@@ -224,6 +235,10 @@ public class AllyUnit : Unit
                 {
                     Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({targetPos})の敵に {AttackPower} ダメージ！");
                     enemy.TakeDamage(AttackPower);
+                    if (SoundManager.Instance != null)
+                    {
+                        SoundManager.Instance.PlaySE(attackSound);
+                    }
                     if (lightningEffectPrefab != null)
                     {
                         Vector3Int effectPos = new Vector3Int(targetPos.x, targetPos.y, 0);
@@ -249,6 +264,10 @@ public class AllyUnit : Unit
                     if (neighbor != null && neighbor is EnemyUnit surroundEnemy)
                     {
                         surroundEnemy.TakeDamage(AttackPower);
+                        if (SoundManager.Instance != null)
+                        {
+                            SoundManager.Instance.PlaySE(attackSound);
+                        }
                         if (lightningEffectPrefab != null)
                         {
                             Vector3Int effectPos = new Vector3Int(surroundEnemy.GridPosition.x, surroundEnemy.GridPosition.y, 0);
@@ -268,6 +287,10 @@ public class AllyUnit : Unit
                 {
                     // GameManagerのHeal機能を使ってプレイヤーのHPを攻撃力分回復させる
                     GameManager.Instance.Heal(AttackPower);
+                    if (SoundManager.Instance != null)
+                        {
+                            SoundManager.Instance.PlaySE(healSound);
+                        }
                     if (healEffectPrefab != null)
                     {
                         Vector3 effectPos = new Vector3(0, -2, 0);
@@ -295,7 +318,11 @@ public class AllyUnit : Unit
                 if (debuffTarget != null && debuffTarget is EnemyUnit debuffEnemy)
                 {
                     Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({debuffTargetPos})の敵の攻撃力を {AttackPower} 下げる！");
-                    if (lightningEffectPrefab != null)
+                    if (SoundManager.Instance != null)
+                        {
+                            SoundManager.Instance.PlaySE(debuffSound);
+                        }
+                    if (debuffEffectPrefab != null)
                     {
                         Vector3Int effectPos = new Vector3Int(debuffTargetPos.x, debuffTargetPos.y, 0);
                         // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
@@ -321,15 +348,20 @@ public class AllyUnit : Unit
                     Unit neighbor = RuleSystem.Instance.GetUnitAt(GridPosition + dir);
                     if (neighbor != null && neighbor is EnemyUnit surroundDebuffEnemy)
                     {
-                        if (lightningEffectPrefab != null)
-                    {
-                        Vector3Int effectPos = new Vector3Int(surroundDebuffEnemy.GridPosition.x, surroundDebuffEnemy.GridPosition.y, 0);
-                        // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
-                        GameObject effect = Instantiate(debuffEffectPrefab, effectPos, Quaternion.identity);
+                        if (SoundManager.Instance != null)
+                        {
+                            SoundManager.Instance.PlaySE(debuffSound);
+                        }
 
-                        // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
-                        Destroy(effect, 1.0f); 
-                    }
+                        if (debuffEffectPrefab != null)
+                        {
+                            Vector3Int effectPos = new Vector3Int(surroundDebuffEnemy.GridPosition.x, surroundDebuffEnemy.GridPosition.y, 0);
+                            // 敵の座標（targetEnemy.transform.position）にエフェクトを生成
+                            GameObject effect = Instantiate(debuffEffectPrefab, effectPos, Quaternion.identity);
+
+                            // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
+                            Destroy(effect, 1.0f); 
+                        }
                         surroundDebuffEnemy.DebuffAttack(AttackPower);
                     }
                 }
@@ -438,6 +470,10 @@ public class AllyUnit : Unit
                     if (currentTarget != null && currentTarget is EnemyUnit targetEnemy)
                     {
                         targetEnemy.TakeDamage(AttackPower);
+                        if (SoundManager.Instance != null)
+                        {
+                            SoundManager.Instance.PlaySE(attackSound);
+                        }
                         if (lightningEffectPrefab != null)
                         {
                             Vector3Int effectPos = new Vector3Int(targetEnemy.GridPosition.x, targetEnemy.GridPosition.y, 0);
@@ -465,6 +501,10 @@ public class AllyUnit : Unit
     private void Die()
     {
         // 破壊イベントを発行（盤面からの登録解除や勝敗判定などに使う）
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySE(defeatSound);
+        }
         if (dieEffectPrefab != null)
         {
             Vector3Int effectPos = new Vector3Int(this.GridPosition.x, this.GridPosition.y, 0);

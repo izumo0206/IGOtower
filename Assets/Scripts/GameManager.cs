@@ -418,20 +418,10 @@ public class GameManager : MonoBehaviour
             case GamePhase.EnemyTurn:
                 // 敵の合計攻撃力を計算してプレイヤーにダメージを与える
                 var onEnemyTurnAllies = FindObjectsOfType<AllyUnit>();
+                var enemies = FindObjectsOfType<EnemyUnit>();
 
-                int damage = CalculateTotalEnemyDamage();
+                StartCoroutine(EnemyTurnSequenceRoutine(enemies, onEnemyTurnAllies));
 
-                foreach (var ally in onEnemyTurnAllies)
-                {
-                    damage = ally.Shield(damage);
-                }
-                if(damage > 0){  
-                    if (CameraShake.Instance != null)
-                    {
-                        CameraShake.Instance.Shake(0.2f, 0.1f);
-                    }
-                    ProcessEnemyAttacks(damage);
-                }
                 break;
 
             case GamePhase.GameClear:
@@ -510,11 +500,6 @@ public class GameManager : MonoBehaviour
         {
             ChangePhase(GamePhase.GameClear);
         }
-        else
-        {
-            // まだ敵がいれば、次のプレイヤーターンへ
-            ChangePhase(GamePhase.PlayerTurn);
-        }
     }
 
     private void ActivateSkill()
@@ -587,18 +572,44 @@ public class GameManager : MonoBehaviour
         return currentIndex;
     }
 
+
     // ---------------- 以下、スタブ（後でUnitクラスと連携） ----------------
 
-    private int CalculateTotalEnemyDamage()
+
+    // 敵のターンを順番に処理するコルーチン
+    // 引数が2つに増えました！
+    private IEnumerator EnemyTurnSequenceRoutine(EnemyUnit[] enemies, AllyUnit[] onEnemyTurnAllies)
     {
-        // 盤面にいる全EnemyUnitを取得
-        var enemies = FindObjectsOfType<EnemyUnit>();
-        int total = 0;
+        Debug.Log("敵のターン開始");
+        yield return new WaitForSeconds(0.5f);
+
         foreach (var enemy in enemies)
         {
-            total += enemy.AttackPower;
+            if (enemy == null || enemy.CurrentHp <= 0) continue;
+
+
+            int damage = enemy.AttackPower; 
+
+
+            // 味方のシールドで順番に受ける
+            foreach (var ally in onEnemyTurnAllies)
+            {
+                // 🚨 【超重要】ここで味方が生きているかチェック！
+                if (ally == null || ally.CurrentHp <= 0) continue;
+
+                damage = ally.Shield(damage);
+            }
+
+            if (damage > 0)
+            {
+                if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.2f, 0.1f);
+                ProcessEnemyAttacks(damage); 
+            }
+
+            yield return new WaitForSeconds(0.4f);
         }
-        return total;
+        ChangePhase(GamePhase.PlayerTurn);
+
     }
 
     private bool CheckAllEnemiesDefeated()
