@@ -10,6 +10,13 @@ using System.Data; // ステータス表示用
 /// </summary>
 public class EnemyUnit : Unit
 {
+    [Header("表示設定")]
+    [Tooltip("キャラクター画像を表示するSpriteRenderer")]
+    [SerializeField] private SpriteRenderer _unitSpriteRenderer;
+
+    [Header("ユニットデータ")]
+    [SerializeField] private EnemyUnitData _unitData;
+
     [Header("敵ステータス")]
     [SerializeField] private int _attackPower = 2;
     [SerializeField] private int _maxHp = 2;
@@ -20,9 +27,18 @@ public class EnemyUnit : Unit
 
     public int CurrentHp { get; private set; }
     public int AttackPower => _attackPower;
+    public bool IsDefeated { get; private set; }
+    public string UnitId => _unitData != null ? _unitData.unitId : "";
+    public string UnitName => _unitData != null ? _unitData.unitName : gameObject.name;
 
     [Header("演出用")]
     public GameObject dieEffectPrefab;
+
+    public void SetupData(EnemyUnitData data)
+    {
+        _unitData = data;
+        ApplyData(_unitData);
+    }
 
     /// <summary>
     /// 攻撃力を指定した数値だけ下げる（デバフ）
@@ -62,7 +78,47 @@ public class EnemyUnit : Unit
     private void Awake()
     {
         _unitType = UnitType.Enemy;
+
+        if (_unitData != null)
+        {
+            ApplyData(_unitData);
+        }
+        else
+        {
+            CurrentHp = _maxHp;
+        }
+    }
+
+    private void ApplyData(EnemyUnitData data)
+    {
+        if (data == null) return;
+
+        _maxHp = Mathf.Max(1, data.maxHp);
+        _attackPower = Mathf.Max(0, data.attackPower);
         CurrentHp = _maxHp;
+        IsDefeated = false;
+
+        if (_unitSpriteRenderer == null)
+        {
+            _unitSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (_unitSpriteRenderer != null && data.unitSprite != null)
+        {
+            _unitSpriteRenderer.sprite = data.unitSprite;
+            _unitSpriteRenderer.transform.localScale = Vector3.one;
+
+            Vector2 spriteSize = _unitSpriteRenderer.sprite.bounds.size;
+            float maxBound = Mathf.Max(spriteSize.x, spriteSize.y);
+
+            if (maxBound > 0)
+            {
+                float scale = 1f / maxBound;
+                _unitSpriteRenderer.transform.localScale = new Vector3(scale * 0.9f, scale * 0.9f, 1f);
+            }
+        }
+
+        UpdateStatusText();
     }
 
     public override void Init(Vector2Int position)
@@ -76,6 +132,8 @@ public class EnemyUnit : Unit
     /// </summary>
     public void TakeDamage(int damage)
     {
+        if (IsDefeated) return;
+
         CurrentHp -= damage;
         UpdateStatusText();
 
@@ -92,12 +150,18 @@ public class EnemyUnit : Unit
     /// </summary>
     public void Captured()
     {
+        if (IsDefeated) return;
+
         Debug.Log("敵が四方を囲まれて破壊された！");
         Die();
     }
 
     private void Die()
     {
+        if (IsDefeated) return;
+
+        IsDefeated = true;
+
         // 破壊イベントを発行（盤面からの登録解除や勝敗判定などに使う）
         if (dieEffectPrefab != null)
         {

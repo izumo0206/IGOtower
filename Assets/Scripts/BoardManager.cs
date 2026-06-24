@@ -14,7 +14,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private int _width = 5;
     [SerializeField] private int _height = 5;
     [SerializeField] private Tile _tilePrefab;
-    [SerializeField] private EnemyUnit _enemyPrefab; 
+    [SerializeField] private EnemyUnit _enemyPrefab;
     
     [Header("カメラ関連")]
     [SerializeField] private Transform _cameraTransform;
@@ -25,8 +25,6 @@ public class BoardManager : MonoBehaviour
     private int[,] boardData;
 
     public GameManager gameManager;
-
-
 
     private void Awake()
     {
@@ -112,10 +110,19 @@ public class BoardManager : MonoBehaviour
         for (int y = 0; y < _height; y++)
         {
             string[] values = lines[y+1].Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+            if (values.Length != _width)
+            {
+                throw new FormatException($"マップの横幅が一致していません。行: {y + 2}");
+            }
 
             for(int x = 0; x < _width; x++)
             {
-                boardData[x, y] = int.Parse(values[x]);
+                if (!int.TryParse(values[x], out int cellType))
+                {
+                    throw new FormatException($"マップのセル指定が不正です: {values[x]}");
+                }
+
+                boardData[x, y] = cellType;
             }
         }
     }
@@ -144,22 +151,82 @@ public class BoardManager : MonoBehaviour
                     // 辞書に登録
                     _tiles[new Vector2Int(x, y)] = spawnedTile;
                 }
-                // ★ もし数字が2だったら、「敵」も生成してタイルの上に配置する
-                if (boardData[x, y] == 2)
+                // 2以上の数字は敵として扱い、Resources/EnemyUnit/{数字} の敵データを読む。
+                if (boardData[x, y] >= 2)
                 {
-                    // 敵のプレハブを生成
-                    var enemy = Instantiate(_enemyPrefab, new Vector3(x, y, 0), Quaternion.identity);
-
-                    // Unit.cs にある Init() メソッドを使って座標を初期化
-                    enemy.Init(new Vector2Int(x, y));
-                    // 【とても重要】 RuleSystem に「ここに敵がいるよ」と登録する
-                    RuleSystem.Instance.RegisterUnit(enemy);
+                    SpawnEnemy(x, y, boardData[x, y]);
                 }
             }
         }
 
         // 生成した盤面が画面の中央に来るようにカメラ位置を調整する
         CenterCamera();
+    }
+
+    private void SpawnEnemy(int x, int y, int mapValue)
+    {
+        EnemyUnitData enemyData = GetEnemyData(mapValue);
+        if (enemyData == null)
+        {
+            return;
+        }
+
+        GameObject prefabToInstantiate = GetEnemyPrefab(enemyData, mapValue);
+
+        if (prefabToInstantiate == null)
+        {
+            return;
+        }
+
+        GameObject go = Instantiate(prefabToInstantiate, new Vector3(x, y, 0), Quaternion.identity);
+        EnemyUnit enemy = go.GetComponent<EnemyUnit>();
+
+        if (enemy == null)
+        {
+            Debug.LogError($"{prefabToInstantiate.name} に EnemyUnit コンポーネントがありません");
+            Destroy(go);
+            return;
+        }
+
+        if (enemyData != null)
+        {
+            enemy.SetupData(enemyData);
+        }
+
+        enemy.Init(new Vector2Int(x, y));
+        RuleSystem.Instance.RegisterUnit(enemy);
+    }
+
+    private EnemyUnitData GetEnemyData(int mapValue)
+    {
+        string resourcePath = $"EnemyUnit/{mapValue}";
+        EnemyUnitData enemyData = Resources.Load<EnemyUnitData>(resourcePath);
+
+        if (enemyData != null)
+        {
+            return enemyData;
+        }
+
+        Debug.LogError($"マップ値 {mapValue} に対応する EnemyUnitData が Resources/{resourcePath}.asset に見つかりません");
+
+        return null;
+    }
+
+    private GameObject GetEnemyPrefab(EnemyUnitData enemyData, int mapValue)
+    {
+        if (enemyData != null && enemyData.prefab != null)
+        {
+            return enemyData.prefab;
+        }
+
+        if (_enemyPrefab == null)
+        {
+            Debug.LogError($"{enemyData.name} にプレハブが設定されておらず、BoardManagerのデフォルト敵プレハブも未設定です");
+            return null;
+        }
+
+        Debug.LogWarning($"{enemyData.name} にプレハブが設定されていないため、デフォルト敵プレハブを使います");
+        return _enemyPrefab.gameObject;
     }
 
     /// <summary>

@@ -98,6 +98,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        EnemyUnit.OnEnemyDestroyed += HandleEnemyDestroyed;
+    }
+
+    private void OnDisable()
+    {
+        EnemyUnit.OnEnemyDestroyed -= HandleEnemyDestroyed;
+    }
+
     private void Start()
     {
         InitializeGame();
@@ -409,8 +419,16 @@ public class GameManager : MonoBehaviour
 
                 foreach (var ally in allies)
                 {
+                    if (ally == null) continue;
+
                     ally.OnTurnEnd();
+
+                    if (CurrentPhase == GamePhase.GameClear || CurrentPhase == GamePhase.GameOver)
+                    {
+                        return;
+                    }
                 }
+
                 // 発動完了後、EnemyTurnへ
                 ChangePhase(GamePhase.EnemyTurn);
                 break;
@@ -506,6 +524,19 @@ public class GameManager : MonoBehaviour
     {
         
 
+    }
+
+    private void HandleEnemyDestroyed(EnemyUnit enemy)
+    {
+        if (CurrentPhase == GamePhase.GameClear || CurrentPhase == GamePhase.GameOver)
+        {
+            return;
+        }
+
+        if (CheckAllEnemiesDefeated())
+        {
+            ChangePhase(GamePhase.GameClear);
+        }
     }
 
     public void TakeDamage(int damage)
@@ -604,18 +635,36 @@ public class GameManager : MonoBehaviour
             {
                 if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.2f, 0.1f);
                 ProcessEnemyAttacks(damage); 
+
+                if (CurrentPhase == GamePhase.GameOver || CurrentPhase == GamePhase.GameClear)
+                {
+                    yield break;
+                }
             }
 
             yield return new WaitForSeconds(0.4f);
         }
-        ChangePhase(GamePhase.PlayerTurn);
+
+        if (CurrentPhase == GamePhase.EnemyTurn)
+        {
+            ChangePhase(GamePhase.PlayerTurn);
+        }
 
     }
 
     private bool CheckAllEnemiesDefeated()
     {
-        // 敵リストの数が0かチェック
+        // 撃破処理中の敵は、Destroyが完了する前でも倒れているものとして扱う
         var enemies = FindObjectsOfType<EnemyUnit>();
-        return enemies.Length == 0; 
+
+        foreach (var enemy in enemies)
+        {
+            if (enemy != null && !enemy.IsDefeated)
+            {
+                return false;
+            }
+        }
+
+        return true; 
     }
 }
