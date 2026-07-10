@@ -13,7 +13,19 @@ public class TitleManager : MonoBehaviour
         {
             SoundManager.Instance.PlaySE(switchSound);
         }
-        FadeManager.Instance.TransitionToScene("SelectStage");
+
+        int isCleared = PlayerPrefs.GetInt("IsTutorialCleared", 0);
+
+        if (isCleared == 0)
+        {
+            TextAsset stageData = Resources.Load<TextAsset>("Stage/map1");
+            GameManager.selectedStageText = stageData.text;
+            FadeManager.Instance.TransitionToScene("MainScene");
+        }
+        else
+        {
+            FadeManager.Instance.TransitionToScene("SelectStage");
+        }
     }
 
     public void OnExtraModeClicked()

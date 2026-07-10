@@ -78,6 +78,11 @@ public class BoardManager : MonoBehaviour
 
         ally.OnPlaced();
         RuleSystem.Instance.RegisterUnit(ally);
+        if (TutorialManager.IsTutorialMode && TutorialManager.Instance != null)
+        {
+            // 「この座標に置いたよ！」と報告を投げる
+            TutorialManager.Instance.ReportAllyPlaced(ally.GridPosition, ally.UnitId);
+        }
     }
 
     public void LoadStage(int stageNumber)

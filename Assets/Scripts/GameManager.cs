@@ -84,8 +84,7 @@ public class GameManager : MonoBehaviour
     public CanvasGroup mainUICanvasGroup;
 
     private Vector2Int _pendingGridPos;
-
-
+    public TutorialDialog tutorialDialog;   
     private void Awake()
     {
         if (Instance == null)
