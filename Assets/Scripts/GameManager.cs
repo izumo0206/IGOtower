@@ -127,6 +127,23 @@ public class GameManager : MonoBehaviour
                 {
                     if(AlreadySet == false)
                     {
+                        if (TutorialManager.IsTutorialMode && TutorialManager.Instance != null)
+                        {
+                            int x = (int)Mathf.Round(hit.point.x);
+                            int y = (int)Mathf.Round(hit.point.y);
+                            Vector2Int pos = new Vector2Int(x, y);
+
+                            // もし「期待されている座標」が設定されていて、クリックした場所がそれと違ったら…
+                            if (TutorialManager.Instance.ExpectedPos.HasValue && 
+                                TutorialManager.Instance.ExpectedPos.Value != pos
+                                || TutorialManager.Instance.ExpectedId != allyUnits[currentIndex].unitId)
+                            {
+                                Debug.Log("そこじゃないよ！光っているマスに置いてね！");
+                                // ※ここで「ブブー」というエラー音を鳴らしたりすると最高です！
+
+                                return; // ⛔ ここで処理を強制終了して、下の「置く処理」を絶対に実行させない！
+                            }
+                        }
 
                         if(RemainingCost >= allyUnits[currentIndex].cost/*選択したコマのコスト*/)
                         {
@@ -300,6 +317,7 @@ public class GameManager : MonoBehaviour
     {
         if(pendingUnit != null)
         {
+            
 
             if(allyUnits[currentIndex].howToPut == HowToPut.Sacrifice)
             {

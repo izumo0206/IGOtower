@@ -72,12 +72,14 @@ public class BoardManager : MonoBehaviour
 
     public void FinalizeAlly(AllyUnit ally, UnitDirection dir)
     {
+
         ally.SetDirection(dir);
 
         ally.SetAlpha(1.0f);
 
         ally.OnPlaced();
         RuleSystem.Instance.RegisterUnit(ally);
+
         if (TutorialManager.IsTutorialMode && TutorialManager.Instance != null)
         {
             // 「この座標に置いたよ！」と報告を投げる

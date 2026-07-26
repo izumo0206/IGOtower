@@ -23,6 +23,11 @@ public class TutorialDialog : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    public void Appear()
+    {
+        gameObject.SetActive(true);
+    }
+
 
     // ① インスペクターから「次へ」ボタンを押した時に呼び出す関数
     public void OnClickNextButton()

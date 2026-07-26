@@ -18,7 +18,7 @@ public class TitleManager : MonoBehaviour
 
         if (isCleared == 0)
         {
-            TextAsset stageData = Resources.Load<TextAsset>("Stage/map1");
+            TextAsset stageData = Resources.Load<TextAsset>("Tutorial/map0");
             GameManager.selectedStageText = stageData.text;
             FadeManager.Instance.TransitionToScene("MainScene");
         }

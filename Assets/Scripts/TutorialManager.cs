@@ -8,19 +8,49 @@ public class TutorialManager : MonoBehaviour
 
     private bool _isActionCompleted = false;
 
-    private Vector2Int? _expectedPos = null;
-
-    private string _expectedId = null;
-
-    public static bool IsTutorialMode = false;
-
     [Header("チュートリアル用のUIやカーソル")]
     public TutorialDialog tutorialDialog;
     public GameObject tutorialCursor;
     public GameObject tutorialBlockerPanel;
 
+    private Vector2Int? _expectedPos = null;
+
+    public Vector2Int? ExpectedPos
+    {
+        get { return _expectedPos; }
+        private set 
+        { 
+            _expectedPos = value; 
+
+            Debug.Log($"🕵️ ExpectedPosに代入されたよ！座標: {value} / カーソルはセットされてる？: {(tutorialCursor != null)}");
+            
+            // ExpectedPosがセットされたら、自動でハイライトを移動して表示する！
+            if (_expectedPos.HasValue && tutorialCursor != null)
+            {
+                // Vector2Int をワールド座標(Vector3)に変換してカーソルを移動
+                tutorialCursor.transform.position = new Vector3(_expectedPos.Value.x, _expectedPos.Value.y, 0);
+                tutorialCursor.SetActive(true);
+                Debug.Log("✨ ハイライトをONにしたよ！");
+            }
+            // nullになったら（待機が終わったら）ハイライトを消す！
+            else if (tutorialCursor != null)
+            {
+                tutorialCursor.SetActive(false);
+            }
+        }
+    }
+
+    public string ExpectedId { get; private set; }
+
+    public static bool IsTutorialMode = false;
+
+
+
     // バトルマネージャーへの参照（命令を出すため）
     private GameManager _gameManager;
+
+    [SerializeField] private Transform[] _targetMarkers;
+    [SerializeField] private GameObject _tutorialCursor;
 
     private void Awake()
     {
@@ -33,6 +63,7 @@ public class TutorialManager : MonoBehaviour
         int isCleared = PlayerPrefs.GetInt("IsTutorialCleared", 0);
         if (isCleared == 0)
         {
+            IsTutorialMode = true;
             // チュートリアルが必要なら、進行コルーチンをスタート
             StartCoroutine(TutorialSequenceRoutine());
         }
@@ -47,7 +78,7 @@ public class TutorialManager : MonoBehaviour
     public void ReportAllyPlaced(Vector2Int placedPos, string unitId)
     {
         // もし待機中の座標があり、かつ「置かれた座標」と「待っていた座標」がピッタリ一致したら！
-        if (_expectedPos != null && _expectedPos.Value == placedPos &&  _expectedId != null && _expectedId == unitId)
+        if (ExpectedPos != null && ExpectedPos.Value == placedPos &&  ExpectedId != null && ExpectedId == unitId)
         {
             Debug.Log($"大正解！期待通り {placedPos} に配置されました！");
             _isActionCompleted = true; // ここで初めてフラグをオンにする
@@ -63,12 +94,12 @@ public class TutorialManager : MonoBehaviour
     {
         _isActionCompleted = false; 
 
-        _expectedPos = targetPos;
-        _expectedId = targetId;
+        ExpectedPos = targetPos;
+        ExpectedId = targetId;
         yield return new WaitUntil(() => _isActionCompleted); 
 
-        _expectedPos = null;
-        _expectedId = null;
+        ExpectedPos = null;
+        ExpectedId = null;
     }
 
     private IEnumerator TutorialSequenceRoutine()
@@ -80,6 +111,15 @@ public class TutorialManager : MonoBehaviour
         tutorialDialog.Show("敵を攻撃して倒してみましょう。攻撃スキルを持つ味方を設置してください");
 
         yield return StartCoroutine(tutorialDialog.WaitForNext());
+
+        tutorialDialog.Hide();
+
+        Vector2Int pos1 = new Vector2Int(
+            Mathf.RoundToInt(_targetMarkers[0].position.x),
+            Mathf.RoundToInt(_targetMarkers[0].position.y)
+        );
+
+        yield return StartCoroutine(WaitForPlayerAction(pos1, "001"));
 
         tutorialDialog.Show("味方は設置するときに消費コストが決められています。設置を確定したときに消費されます");
 
