@@ -412,6 +412,10 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ShowCutInRoutine()
     {
+        if (PlayerPrefs.GetInt("IsTutorialCleared", 0) == 0)
+        {
+            yield break;
+        }
         cutInPanel.SetActive(true);
         
         // アニメーションが終わるまで待つ（例: 2秒）
