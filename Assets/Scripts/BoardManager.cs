@@ -83,7 +83,7 @@ public class BoardManager : MonoBehaviour
         if (TutorialManager.IsTutorialMode && TutorialManager.Instance != null)
         {
             // 「この座標に置いたよ！」と報告を投げる
-            TutorialManager.Instance.ReportAllyPlaced(ally.GridPosition, ally.UnitId);
+            TutorialManager.Instance.ReportAllyPlaced(ally.GridPosition, ally.UnitId, dir);
         }
     }
 

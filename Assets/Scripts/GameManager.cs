@@ -138,8 +138,6 @@ public class GameManager : MonoBehaviour
                                 TutorialManager.Instance.ExpectedPos.Value != pos
                                 || TutorialManager.Instance.ExpectedId != allyUnits[currentIndex].unitId)
                             {
-                                Debug.Log("そこじゃないよ！光っているマスに置いてね！");
-                                // ※ここで「ブブー」というエラー音を鳴らしたりすると最高です！
 
                                 return; // ⛔ ここで処理を強制終了して、下の「置く処理」を絶対に実行させない！
                             }
@@ -327,6 +325,17 @@ public class GameManager : MonoBehaviour
                 
             }
 
+            if (TutorialManager.IsTutorialMode && TutorialManager.Instance != null)
+            {
+                // マネージャーが「この向きを待ってるよ」と言っているのに、違う向きにしようとしたら…
+                if (TutorialManager.Instance.ExpectedDir.HasValue && 
+                    TutorialManager.Instance.ExpectedDir.Value != dir)
+                {
+                    
+                    return; // ⛔ ブロック！向きを確定させない
+                }
+            }
+
             boardManager.FinalizeAlly(pendingUnit, dir);
 
             pendingUnit.PlayPlaceEffect(); 
@@ -423,9 +432,11 @@ public class GameManager : MonoBehaviour
         {
             case GamePhase.PlayerTurn:
                 // TODO: プレイヤーの入力（駒の配置）を受け付ける状態にする
-                cutInText.text = "YOUR TURN";
-                cutInText.color = Color.white;
-                StartCoroutine(ShowCutInRoutine());
+                if (!TutorialManager.IsTutorialMode){
+                    cutInText.text = "YOUR TURN";
+                    cutInText.color = Color.white;
+                    StartCoroutine(ShowCutInRoutine());
+                }
                 AlreadySet = false;
                 
                 break;
@@ -461,7 +472,9 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.GameClear:
                 Debug.Log("GAME CLEAR!!");
-                if (gameClearPanel != null) gameClearPanel.SetActive(true);
+                if (!TutorialManager.IsTutorialMode){
+                    if (gameClearPanel != null) gameClearPanel.SetActive(true);
+                }
                 if (!string.IsNullOrEmpty(GameManager.currentStageName))
                 {
                     string saveKey = GameManager.currentStageName + "_Cleared";
@@ -585,17 +598,21 @@ public class GameManager : MonoBehaviour
 
     public void NextPiece()
     {
-        currentIndex = (currentIndex + 1) % allyUnits.Count;
-        UpdateSelectionUI();
+        if (!TutorialManager.IsTutorialMode){
+            currentIndex = (currentIndex + 1) % allyUnits.Count;
+            UpdateSelectionUI();
+        }
     }
     public void PrevPiece()
     {
-        currentIndex--;
-        if(currentIndex < 0)
-        {
-            currentIndex = allyUnits.Count - 1;
+        if (!TutorialManager.IsTutorialMode){
+            currentIndex--;
+            if(currentIndex < 0)
+            {
+                currentIndex = allyUnits.Count - 1;
+            }
+            UpdateSelectionUI();
         }
-        UpdateSelectionUI();
     }
 
 
@@ -618,6 +635,12 @@ public class GameManager : MonoBehaviour
     public int GetSelected()
     {
         return currentIndex;
+    }
+
+    public void ChangeIndex(int index)
+    {
+        currentIndex = index;
+        UpdateSelectionUI();
     }
 
 
