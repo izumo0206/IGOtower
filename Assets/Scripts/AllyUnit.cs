@@ -32,7 +32,9 @@ public class AllyUnit : Unit
     
     // データから各種ステータスを参照（データがない場合の対策付き）
     public int AttackPower => _unitData != null ? _unitData.attackPower : 0;
-    public int Cost => _unitData != null ? _unitData.cost : 0;
+    public int DamagePower => AttackPower;
+    public int DebuffPower => AttackPower;
+    public int Cost => _unitData != null ? Mathf.Max(0, _unitData.cost) : 0;
     
     // データからIDやスキル種別を取得できるようにプロパティを公開
     public string UnitId => _unitData != null ? _unitData.unitId : "";
@@ -233,8 +235,8 @@ public class AllyUnit : Unit
                 
                 if (target != null && target is EnemyUnit enemy)
                 {
-                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({targetPos})の敵に {AttackPower} ダメージ！");
-                    enemy.TakeDamage(AttackPower);
+                    Debug.Log($"【{_unitData.skillTiming}】{_unitData.unitName} のスキル発動：指定方向({targetPos})の敵に {DamagePower} ダメージ！");
+                    enemy.TakeDamage(DamagePower);
                     if (SoundManager.Instance != null)
                     {
                         SoundManager.Instance.PlaySE(attackSound);
@@ -263,7 +265,7 @@ public class AllyUnit : Unit
                     Unit neighbor = RuleSystem.Instance.GetUnitAt(GridPosition + dir);
                     if (neighbor != null && neighbor is EnemyUnit surroundEnemy)
                     {
-                        surroundEnemy.TakeDamage(AttackPower);
+                        surroundEnemy.TakeDamage(DamagePower);
                         if (SoundManager.Instance != null)
                         {
                             SoundManager.Instance.PlaySE(attackSound);
@@ -331,7 +333,7 @@ public class AllyUnit : Unit
                         // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
                         Destroy(effect, 1.0f); 
                     }
-                    debuffEnemy.DebuffAttack(AttackPower);
+                    debuffEnemy.DebuffAttack(DebuffPower);
                 }
                 else
                 {
@@ -362,7 +364,7 @@ public class AllyUnit : Unit
                             // 3. 【重要】出しっぱなしだと重くなるので、1秒後（エフェクトが終わる頃）に自動で消す
                             Destroy(effect, 1.0f); 
                         }
-                        surroundDebuffEnemy.DebuffAttack(AttackPower);
+                        surroundDebuffEnemy.DebuffAttack(DebuffPower);
                     }
                 }
                 break;
@@ -469,7 +471,7 @@ public class AllyUnit : Unit
                     Unit currentTarget = RuleSystem.Instance.GetUnitAt(attackOLTargetPos[i]);
                     if (currentTarget != null && currentTarget is EnemyUnit targetEnemy)
                     {
-                        targetEnemy.TakeDamage(AttackPower);
+                        targetEnemy.TakeDamage(DamagePower);
                         if (SoundManager.Instance != null)
                         {
                             SoundManager.Instance.PlaySE(attackSound);

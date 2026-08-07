@@ -1,11 +1,11 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class TitleManager : MonoBehaviour
 {
     [Header("効果音")]
     public AudioClip buttonSound;
     public AudioClip switchSound;
+
     // メインモードのボタンが押された時
     public void OnPuzzleModeClicked()
     {
@@ -14,12 +14,13 @@ public class TitleManager : MonoBehaviour
             SoundManager.Instance.PlaySE(switchSound);
         }
 
-        int isCleared = PlayerPrefs.GetInt("IsTutorialCleared", 0);
+        GameSession session = GameSession.EnsureInstance();
 
-        if (isCleared == 0)
+        if (!session.Profile.tutorialCleared)
         {
             TextAsset stageData = Resources.Load<TextAsset>("Tutorial/map0");
-            GameManager.selectedStageText = stageData.text;
+            if (stageData == null) return;
+            session.BeginTutorial(stageData.text);
             FadeManager.Instance.TransitionToScene("MainScene");
         }
         else
@@ -28,12 +29,4 @@ public class TitleManager : MonoBehaviour
         }
     }
 
-    public void OnExtraModeClicked()
-    {
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySE(buttonSound);
-        }
-        Debug.Log("いつかやる");
-    }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using TMPro; // TextMeshProを使うために必要
 using UnityEngine.SceneManagement;
@@ -17,7 +18,9 @@ public class SelectStage : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        TextAsset[] stageFiles = Resources.LoadAll<TextAsset>("Stage");
+        TextAsset[] stageFiles = Resources.LoadAll<TextAsset>("Stage")
+            .OrderBy(stage => ExtractStageNumber(stage.name))
+            .ToArray();
 
         foreach (TextAsset stageFile in stageFiles)
         {
@@ -26,25 +29,23 @@ public class SelectStage : MonoBehaviour
 
             if (stageBtn != null)
             {
-                string saveKey = stageFile.name + "_Cleared";
-                bool isCleared = PlayerPrefs.GetInt(saveKey, 0) == 1;
+                bool isCleared = GameSession.EnsureInstance().IsPuzzleStageCleared(stageFile.name);
 
                 stageBtn.Setup(stageFile.name, isCleared, () =>
                 {
-                    GameManager.currentStageName = stageFile.name; 
-                    OnStageButtonClicked(stageFile.text);
+                    OnStageButtonClicked(stageFile.name, stageFile.text);
                 });
             }
         }
     }
 
-    private void OnStageButtonClicked(string mapData)
+    private void OnStageButtonClicked(string stageName, string mapData)
     {
         if (SoundManager.Instance != null)
         {
             SoundManager.Instance.PlaySE(switchSound);
         }
-        GameManager.selectedStageText = mapData;
+        GameSession.EnsureInstance().BeginPuzzleStage(stageName, mapData);
 
         FadeManager.Instance.TransitionToScene("MainScene");
     }
@@ -53,5 +54,11 @@ public class SelectStage : MonoBehaviour
     void Update()
     {
         
+    }
+
+    private static int ExtractStageNumber(string stageName)
+    {
+        int value;
+        return int.TryParse(stageName.Replace("map", string.Empty), out value) ? value : int.MaxValue;
     }
 }

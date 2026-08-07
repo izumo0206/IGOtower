@@ -63,8 +63,8 @@ public class TutorialManager : MonoBehaviour
 
     void Start()
     {
-        int isCleared = PlayerPrefs.GetInt("IsTutorialCleared", 0);
-        if (isCleared == 0)
+        bool isCleared = GameSession.EnsureInstance().Profile.tutorialCleared;
+        if (!isCleared)
         {
             IsTutorialMode = true;
 
@@ -126,8 +126,7 @@ public class TutorialManager : MonoBehaviour
         tutorialDialog.Hide();
 
         // 4. クリアフラグを立てて保存する（次回から出ないようにする）
-        PlayerPrefs.SetInt("IsTutorialCleared", 1);
-        PlayerPrefs.Save();
+        GameSession.EnsureInstance().MarkTutorialCleared();
         
 
         // 5. チュートリアルモードをOFF！
@@ -266,8 +265,7 @@ public class TutorialManager : MonoBehaviour
 
         if (_skipButtonObj != null) _skipButtonObj.SetActive(false);
         
-        PlayerPrefs.SetInt("IsTutorialCleared", 1);
-        PlayerPrefs.Save();
+        GameSession.EnsureInstance().MarkTutorialCleared();
         FadeManager.Instance.TransitionToScene("SelectStage");
         yield break;
     }

@@ -25,8 +25,6 @@ public enum GamePhase
 /// </summary>
 public class GameManager : MonoBehaviour
 {
-    public static string selectedStageText;
-    public static string currentStageName;
     public static GameManager Instance { get; private set; }
 
     [Header("プレイヤーステータス")]
@@ -51,6 +49,7 @@ public class GameManager : MonoBehaviour
 
     public int CurrentHp { get; private set; }
     public int RemainingCost { get; private set; }
+    public int MaxHp => _maxHp;
 
     public bool AlreadySet = false;
 
@@ -84,7 +83,7 @@ public class GameManager : MonoBehaviour
     public CanvasGroup mainUICanvasGroup;
 
     private Vector2Int _pendingGridPos;
-    public TutorialDialog tutorialDialog;   
+    public TutorialDialog tutorialDialog;
     private void Awake()
     {
         if (Instance == null)
@@ -134,8 +133,8 @@ public class GameManager : MonoBehaviour
                             Vector2Int pos = new Vector2Int(x, y);
 
                             // もし「期待されている座標」が設定されていて、クリックした場所がそれと違ったら…
-                            if (TutorialManager.Instance.ExpectedPos.HasValue && 
-                                TutorialManager.Instance.ExpectedPos.Value != pos
+                            if ((TutorialManager.Instance.ExpectedPos.HasValue && 
+                                TutorialManager.Instance.ExpectedPos.Value != pos)
                                 || TutorialManager.Instance.ExpectedId != allyUnits[currentIndex].unitId)
                             {
 
@@ -143,7 +142,7 @@ public class GameManager : MonoBehaviour
                             }
                         }
 
-                        if(RemainingCost >= allyUnits[currentIndex].cost/*選択したコマのコスト*/)
+                        if(RemainingCost >= GetSelectedPlacementCost())
                         {
                             int x = (int)Mathf.Round(hit.point.x);
                             int y = (int)Mathf.Round(hit.point.y);
@@ -248,7 +247,7 @@ public class GameManager : MonoBehaviour
                     return;
                 }
 
-                if(AlreadySet == false && RemainingCost >= 2 && RuleSystem.Instance.CanPlaceAlly(pos) == 3){
+                if(AlreadySet == false && RemainingCost >= GetSelectedPlacementCost() && RuleSystem.Instance.CanPlaceAlly(pos) == 3){
 
                     highlightSquareAble.transform.position = new Vector2(x, y);
 
@@ -295,6 +294,12 @@ public class GameManager : MonoBehaviour
         _maxCost = maxCost;
     }
 
+    private int GetSelectedPlacementCost()
+    {
+        if (allyUnits == null || allyUnits.Count == 0) return int.MaxValue;
+        return Mathf.Max(0, allyUnits[currentIndex].cost);
+    }
+
     private void ShowDirectionUI(Vector3 position)
     {
         HideDirectionUI();
@@ -317,14 +322,6 @@ public class GameManager : MonoBehaviour
         {
             
 
-            if(allyUnits[currentIndex].howToPut == HowToPut.Sacrifice)
-            {
-                Unit target = RuleSystem.Instance.GetUnitAt(_pendingGridPos);
-                AllyUnit ally = target as AllyUnit;
-                ally.Sacrificed();
-                
-            }
-
             if (TutorialManager.IsTutorialMode && TutorialManager.Instance != null)
             {
                 // マネージャーが「この向きを待ってるよ」と言っているのに、違う向きにしようとしたら…
@@ -336,6 +333,18 @@ public class GameManager : MonoBehaviour
                 }
             }
 
+            if(allyUnits[currentIndex].howToPut == HowToPut.Sacrifice)
+            {
+                Unit target = RuleSystem.Instance.GetUnitAt(_pendingGridPos);
+                AllyUnit ally = target as AllyUnit;
+                if (ally == null)
+                {
+                    CancelPlacement();
+                    return;
+                }
+                ally.Sacrificed();
+            }
+
             boardManager.FinalizeAlly(pendingUnit, dir);
 
             pendingUnit.PlayPlaceEffect(); 
@@ -343,7 +352,7 @@ public class GameManager : MonoBehaviour
             HideDirectionUI();
             pendingUnit = null;
 
-            TryConsumeCost(allyUnits[currentIndex].cost/*選択したコマのコスト*/);
+            TryConsumeCost(GetSelectedPlacementCost());
             AlreadySet = true;
 
 
@@ -437,9 +446,9 @@ public class GameManager : MonoBehaviour
             case GamePhase.PlayerTurn:
                 // TODO: プレイヤーの入力（駒の配置）を受け付ける状態にする
                 if (!TutorialManager.IsTutorialMode){
-                    cutInText.text = "YOUR TURN";
-                    cutInText.color = Color.white;
-                    StartCoroutine(ShowCutInRoutine());
+                    if (cutInText != null) cutInText.text = "YOUR TURN";
+                    if (cutInText != null) cutInText.color = Color.white;
+                    if (cutInPanel != null) StartCoroutine(ShowCutInRoutine());
                 }
                 AlreadySet = false;
                 
@@ -476,17 +485,9 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.GameClear:
                 Debug.Log("GAME CLEAR!!");
+                GameSession.EnsureInstance().HandleBattleClear();
                 if (!TutorialManager.IsTutorialMode){
                     if (gameClearPanel != null) gameClearPanel.SetActive(true);
-                }
-                if (!string.IsNullOrEmpty(GameManager.currentStageName))
-                {
-                    string saveKey = GameManager.currentStageName + "_Cleared";
-                    PlayerPrefs.SetInt(saveKey, 1);
-                    
-                    PlayerPrefs.Save(); 
-                    
-                    Debug.Log(GameManager.currentStageName + " のクリアデータを保存しました！");
                 }
                 break;
 
@@ -575,13 +576,13 @@ public class GameManager : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        CurrentHp -= damage;
+        CurrentHp = Mathf.Max(0, CurrentHp - damage);
         Debug.Log($"プレイヤーは {damage} のダメージを受けた。残りHP: {CurrentHp}");
     }
 
     public void Heal(int amount)
     {
-        CurrentHp += amount;
+        CurrentHp = Mathf.Min(_maxHp, CurrentHp + Mathf.Max(0, amount));
         // 最大HPを超えないようにするならここでCapする
         Debug.Log($"プレイヤーは {amount} 回復した。残りHP: {CurrentHp}");
     }
@@ -602,14 +603,14 @@ public class GameManager : MonoBehaviour
 
     public void NextPiece()
     {
-        if (!TutorialManager.IsTutorialMode){
+        if (!TutorialManager.IsTutorialMode && allyUnits.Count > 0){
             currentIndex = (currentIndex + 1) % allyUnits.Count;
             UpdateSelectionUI();
         }
     }
     public void PrevPiece()
     {
-        if (!TutorialManager.IsTutorialMode){
+        if (!TutorialManager.IsTutorialMode && allyUnits.Count > 0){
             currentIndex--;
             if(currentIndex < 0)
             {
@@ -622,6 +623,7 @@ public class GameManager : MonoBehaviour
 
     void UpdateSelectionUI()
     {
+        if (allyUnits == null || allyUnits.Count == 0) return;
         // ScriptableObject自体の名前(.name)ではなく、設定した unitName を使うと綺麗です
         nameDisplay.text = allyUnits[currentIndex].unitName;
 
@@ -643,7 +645,8 @@ public class GameManager : MonoBehaviour
 
     public void ChangeIndex(int index)
     {
-        currentIndex = index;
+        if (allyUnits == null || allyUnits.Count == 0) return;
+        currentIndex = Mathf.Clamp(index, 0, allyUnits.Count - 1);
         UpdateSelectionUI();
     }
 

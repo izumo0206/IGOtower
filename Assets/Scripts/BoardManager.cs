@@ -36,18 +36,20 @@ public class BoardManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        string mapText;
+        if (GameSession.EnsureInstance().TryGetSelectedMap(out mapText))
+        {
+            ParseMapData(mapText);
+        }
+        else
+        {
+            LoadStage(1);
+        }
     }
 
     private void Start()
     {
-        if (!string.IsNullOrEmpty(GameManager.selectedStageText))
-        {
-            ParseMapData(GameManager.selectedStageText);
-            GameManager.selectedStageText = null;
-        } else
-        {
-            LoadStage(1);
-        }
         GenerateGrid();
     }
 
@@ -170,19 +172,19 @@ public class BoardManager : MonoBehaviour
         CenterCamera();
     }
 
-    private void SpawnEnemy(int x, int y, int mapValue)
+    private EnemyUnit SpawnEnemy(int x, int y, int mapValue)
     {
         EnemyUnitData enemyData = GetEnemyData(mapValue);
         if (enemyData == null)
         {
-            return;
+            return null;
         }
 
         GameObject prefabToInstantiate = GetEnemyPrefab(enemyData, mapValue);
 
         if (prefabToInstantiate == null)
         {
-            return;
+            return null;
         }
 
         GameObject go = Instantiate(prefabToInstantiate, new Vector3(x, y, 0), Quaternion.identity);
@@ -192,7 +194,7 @@ public class BoardManager : MonoBehaviour
         {
             Debug.LogError($"{prefabToInstantiate.name} に EnemyUnit コンポーネントがありません");
             Destroy(go);
-            return;
+            return null;
         }
 
         if (enemyData != null)
@@ -202,6 +204,7 @@ public class BoardManager : MonoBehaviour
 
         enemy.Init(new Vector2Int(x, y));
         RuleSystem.Instance.RegisterUnit(enemy);
+        return enemy;
     }
 
     private EnemyUnitData GetEnemyData(int mapValue)
