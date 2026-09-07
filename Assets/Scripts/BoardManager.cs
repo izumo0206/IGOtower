@@ -116,6 +116,24 @@ public class BoardManager : MonoBehaviour
         string[] value1 = lines[0].Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
         gameManager.setStatus(int.Parse(value1[0]), int.Parse(value1[1]));
 
+        // 任意の使用駒指定。従来の2項目ヘッダーはInspectorの駒一覧を使う。
+        if (value1.Length > 2)
+        {
+            const string prefix = "allies=";
+            if (value1.Length != 3 || !value1[2].StartsWith(prefix, StringComparison.Ordinal))
+                throw new FormatException("マップの使用駒指定は allies=001,003 の形式にしてください。");
+
+            var allowedAllies = new List<AllyUnitData>();
+            foreach (string unitId in value1[2].Substring(prefix.Length).Split(','))
+            {
+                AllyUnitData data = Resources.Load<AllyUnitData>("AllyUnit/" + unitId);
+                if (string.IsNullOrEmpty(unitId) || data == null)
+                    throw new FormatException("マップの使用駒が見つかりません: " + unitId);
+                if (!allowedAllies.Contains(data)) allowedAllies.Add(data);
+            }
+            gameManager.allyUnits = allowedAllies;
+        }
+
         for (int y = 0; y < _height; y++)
         {
             string[] values = lines[y+1].Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);

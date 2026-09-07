@@ -582,8 +582,8 @@ public class GameManager : MonoBehaviour
 
     public void Heal(int amount)
     {
-        CurrentHp = Mathf.Min(_maxHp, CurrentHp + Mathf.Max(0, amount));
-        // 最大HPを超えないようにするならここでCapする
+        // ステージのHPは初期値。回復によって初期HPを超えられる。
+        CurrentHp += Mathf.Max(0, amount);
         Debug.Log($"プレイヤーは {amount} 回復した。残りHP: {CurrentHp}");
     }
 
