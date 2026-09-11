@@ -25,9 +25,16 @@ public static class LearningMapValidation
             game.Heal(-3);
             Require(game.CurrentHp == 5, "Negative healing must not cause damage.");
 
-            int[] expectedHp = { 3, 2, 2, 3, 12, 17 };
-            int[] expectedCost = { 2, 4, 3, 2, 5, 5 };
-            for (int stage = 1; stage <= 14; stage++)
+            int[] expectedHp = { 3, 2, 2, 3, 12, 17, 8, 10, 6, 17, 12, 11, 18, 22, 28 };
+            int[] expectedCost = { 2, 4, 3, 2, 5, 5, 3, 4, 5, 7, 5, 3, 5, 7, 7 };
+            string[] expectedAllies = { "AC", "AC", "AC", "AC", "AC", "AC",
+                "ABC", "ACK", "ACF", "ACO", "AC", "ABC", "ABCK", "ACFO", "ABCFKO" };
+            var unitO = Resources.Load<AllyUnitData>("AllyUnit/015");
+            Require(unitO != null && unitO.unitName == "O" && unitO.cost == 2 && unitO.maxHp == 2
+                && unitO.attackPower == 3 && unitO.skillTiming == SkillTiming.OnPlaced
+                && unitO.skillType == SkillType.AttackOneDir && unitO.howToPut == HowToPut.None
+                && unitO.prefab != null, "Incorrect O data.");
+            for (int stage = 1; stage <= 23; stage++)
             {
                 var inspectorAllies = new List<AllyUnitData> { Resources.Load<AllyUnitData>("AllyUnit/002") };
                 game.allyUnits = inspectorAllies;
@@ -41,7 +48,8 @@ public static class LearningMapValidation
                     Require(game.MaxHp == expectedHp[stage - 9], "Incorrect initial HP.");
                     var costField = typeof(GameManager).GetField("_maxCost", BindingFlags.Instance | BindingFlags.NonPublic);
                     Require((int)costField.GetValue(game) == expectedCost[stage - 9], "Incorrect cost.");
-                    Require(game.allyUnits.Count == 2 && game.allyUnits[0].unitName == "A" && game.allyUnits[1].unitName == "C", "Expected A/C roster.");
+                    string actualAllies = string.Concat(game.allyUnits.ConvertAll(unit => unit.unitName));
+                    Require(actualAllies == expectedAllies[stage - 9], "Incorrect roster for map" + stage);
                 }
                 var data = (int[,])typeof(BoardManager).GetField("boardData", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(board);
                 foreach (int value in data)
@@ -55,7 +63,7 @@ public static class LearningMapValidation
             try { board.ParseMapData("2 3 allies=does-not-exist\n1"); }
             catch (FormatException) { rejected = true; }
             Require(rejected, "Invalid roster must be rejected.");
-            Debug.Log("LearningMapValidation PASS: 14 maps, A/C restrictions, enemy references, uncapped healing, invalid roster.");
+            Debug.Log("LearningMapValidation PASS: 23 maps, per-map rosters, O, enemy references, uncapped healing, invalid roster.");
         }
         finally { UnityEngine.Object.DestroyImmediate(root); }
     }
