@@ -6,8 +6,6 @@ using UnityEngine.UI;
 public class DirectionUIController : MonoBehaviour
 {
     [Header("効果音")]
-    public AudioClip buttonSound;
-    public AudioClip cancelSound;
 
     [Header("チュートリアル用の色設定")]
     [SerializeField] private Button _upButton;
@@ -64,7 +62,7 @@ public class DirectionUIController : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(buttonSound);
+            SoundManager.Instance.PlayButtonSE();
         }
         SendDirection(UnitDirection.Up);
     }
@@ -72,7 +70,7 @@ public class DirectionUIController : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(buttonSound);
+            SoundManager.Instance.PlayButtonSE();
         }
         SendDirection(UnitDirection.Right);
     }
@@ -80,7 +78,7 @@ public class DirectionUIController : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(buttonSound);
+            SoundManager.Instance.PlayButtonSE();
         }
         SendDirection(UnitDirection.Down);
     }
@@ -88,7 +86,7 @@ public class DirectionUIController : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(buttonSound);
+            SoundManager.Instance.PlayButtonSE();
         }
         SendDirection(UnitDirection.Left);
     }
@@ -97,7 +95,7 @@ public class DirectionUIController : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(cancelSound);
+            SoundManager.Instance.PlayCancelSE();
         }
         GameManager gm = FindObjectOfType<GameManager>();
         if(gm != null)

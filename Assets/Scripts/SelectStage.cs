@@ -8,9 +8,6 @@ using UnityEngine.UI; // シーン移動のために必要
 
 public class SelectStage : MonoBehaviour
 {
-    [Header("効果音")]
-    public AudioClip buttonSound;
-    public AudioClip switchSound;
 
 
     public GameObject stageButtonPrefab;
@@ -43,7 +40,7 @@ public class SelectStage : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(switchSound);
+            SoundManager.Instance.PlaySwitchSE();
         }
         GameSession.EnsureInstance().BeginPuzzleStage(stageName, mapData);
 

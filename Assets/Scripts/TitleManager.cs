@@ -1,17 +1,25 @@
+using System;
 using UnityEngine;
+using UnityEngine.Video;
 
 public class TitleManager : MonoBehaviour
 {
-    [Header("効果音")]
-    public AudioClip buttonSound;
-    public AudioClip switchSound;
+
+    public AudioClip _titleBGM;
+    private void Start()
+    {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayBGMWithFadeIn(_titleBGM, 1.0f);
+        }
+    }
 
     // メインモードのボタンが押された時
     public void OnPuzzleModeClicked()
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySE(switchSound);
+            SoundManager.Instance.PlaySwitchSE();
         }
 
         GameSession session = GameSession.EnsureInstance();

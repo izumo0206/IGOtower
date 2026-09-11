@@ -14,6 +14,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _costText;
     [SerializeField] private Button _endTurnButton;
 
+
     private void Start()
     {
         // ターン終了ボタンに処理を登録する
@@ -38,6 +39,10 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void OnEndTurnButtonClicked()
     {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayButtonSE();
+        }
         if (GameManager.Instance != null)
         {
              // プレイヤーの配置が終わり、ターン終了を宣言して敵フェーズへ

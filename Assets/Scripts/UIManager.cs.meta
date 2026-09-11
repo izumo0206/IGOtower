@@ -3,7 +3,11 @@ guid: 0ff4aab83dc53ff4bb24063b98edb056
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - _hpText: {instanceID: 0}
+  - _costText: {instanceID: 0}
+  - _endTurnButton: {instanceID: 0}
+  - buttonSound: {fileID: 8300000, guid: 4575b8427f7ba4e4ab56f5ef7a0d6bd3, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
