@@ -13,6 +13,7 @@ public class SelectStage : MonoBehaviour
     public GameObject stageButtonPrefab;
     public Transform buttonContainer;
     // Start is called before the first frame update
+    public AudioClip _selectBGM;
     void Start()
     {
         TextAsset[] stageFiles = Resources.LoadAll<TextAsset>("Stage")
@@ -33,6 +34,11 @@ public class SelectStage : MonoBehaviour
                     OnStageButtonClicked(stageFile.name, stageFile.text);
                 });
             }
+        }
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayBGMWithFadeIn(_selectBGM, 1.0f);
         }
     }
 

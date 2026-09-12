@@ -84,6 +84,8 @@ public class GameManager : MonoBehaviour
 
     private Vector2Int _pendingGridPos;
     public TutorialDialog tutorialDialog;
+
+    public AudioClip _gameBGM;
     private void Awake()
     {
         if (Instance == null)
@@ -110,6 +112,10 @@ public class GameManager : MonoBehaviour
     {
         InitializeGame();
         UpdateSelectionUI();
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayBGMWithFadeIn(_gameBGM, 1.0f);
+        }
     }
 
     private void Update()
