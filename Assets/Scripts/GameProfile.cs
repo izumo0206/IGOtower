@@ -9,7 +9,7 @@ using UnityEngine;
 [Serializable]
 public class GameProfile
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public int version = CurrentVersion;
     public bool tutorialCleared;
@@ -39,9 +39,24 @@ public static class GameProfileStore
             }
         }
 
-        profile = profile ?? CreateDefault();
+        // Missing profiles may still have progress in the original map keys.
+        profile = profile ?? new GameProfile { version = 1 };
         Normalize(profile);
-        ImportLegacyProgress(profile);
+        if (profile.version < 2)
+        {
+            ImportLegacyProgress(profile);
+            var renumbered = new List<string>();
+            foreach (string stageName in profile.clearedStages)
+            {
+                if (stageName != null && stageName.StartsWith("map", StringComparison.Ordinal)
+                    && int.TryParse(stageName.Substring(3), out int number)
+                    && number >= 9 && number <= 23)
+                {
+                    AddIfMissing(renumbered, "map" + (number - 8));
+                }
+            }
+            profile.clearedStages = renumbered;
+        }
         Save(profile);
         return profile;
     }
@@ -54,6 +69,7 @@ public static class GameProfileStore
     public static void Save(GameProfile profile)
     {
         Normalize(profile);
+        profile.version = GameProfile.CurrentVersion;
         PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(profile));
         PlayerPrefs.Save();
     }
@@ -62,7 +78,7 @@ public static class GameProfileStore
     {
         PlayerPrefs.DeleteKey(SaveKey);
         PlayerPrefs.DeleteKey("IsTutorialCleared");
-        for (int i = 1; i <= 8; i++)
+        for (int i = 1; i <= 23; i++)
         {
             PlayerPrefs.DeleteKey("map" + i + "_Cleared");
         }
@@ -71,7 +87,6 @@ public static class GameProfileStore
 
     private static void Normalize(GameProfile profile)
     {
-        profile.version = GameProfile.CurrentVersion;
         profile.clearedStages = profile.clearedStages ?? new List<string>();
     }
 
@@ -82,7 +97,7 @@ public static class GameProfileStore
             profile.tutorialCleared = true;
         }
 
-        for (int i = 1; i <= 8; i++)
+        for (int i = 1; i <= 23; i++)
         {
             string stageName = "map" + i;
             if (PlayerPrefs.GetInt(stageName + "_Cleared", 0) == 1)

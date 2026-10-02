@@ -70,6 +70,32 @@ public class GameSession : MonoBehaviour
         SelectedMapText = mapText;
     }
 
+    public bool HasNextPuzzleStage => TryGetNextPuzzleStage(out _);
+
+    public bool TryAdvanceToNextPuzzleStage()
+    {
+        if (!TryGetNextPuzzleStage(out TextAsset nextStage)) return false;
+
+        BeginPuzzleStage(nextStage.name, nextStage.text);
+        TransitionTo("MainScene");
+        return true;
+    }
+
+    private bool TryGetNextPuzzleStage(out TextAsset nextStage)
+    {
+        nextStage = null;
+        if (Mode != GameMode.Puzzle || string.IsNullOrEmpty(SelectedStageName)
+            || !SelectedStageName.StartsWith("map", System.StringComparison.Ordinal)
+            || !int.TryParse(SelectedStageName.Substring(3), out int stageNumber)
+            || stageNumber < 1 || stageNumber == int.MaxValue)
+        {
+            return false;
+        }
+
+        nextStage = Resources.Load<TextAsset>("Stage/map" + (stageNumber + 1));
+        return nextStage != null;
+    }
+
     public bool TryGetSelectedMap(out string mapText)
     {
         mapText = SelectedMapText;

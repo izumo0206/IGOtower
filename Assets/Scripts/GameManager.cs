@@ -68,6 +68,7 @@ public class GameManager : MonoBehaviour
 
     [Header("リザルト画面")]
     public GameObject gameClearPanel;
+    [SerializeField] private Button nextStageButton;
     public GameObject gameOverPanel;
 
     private int currentIndex = 0;
@@ -493,6 +494,8 @@ public class GameManager : MonoBehaviour
                 Debug.Log("GAME CLEAR!!");
                 GameSession.EnsureInstance().HandleBattleClear();
                 if (!TutorialManager.IsTutorialMode){
+                    if (nextStageButton != null)
+                        nextStageButton.gameObject.SetActive(GameSession.EnsureInstance().HasNextPuzzleStage);
                     if (gameClearPanel != null) gameClearPanel.SetActive(true);
                 }
                 break;
@@ -524,6 +527,17 @@ public class GameManager : MonoBehaviour
     public void ReturnToStageSelect()
     {
         SceneManager.LoadScene("SelectStage");
+    }
+
+    public void GoToNextStage()
+    {
+        if (CurrentPhase != GamePhase.GameClear) return;
+        if (!GameSession.EnsureInstance().TryAdvanceToNextPuzzleStage()) return;
+
+        // Block repeated clicks while the next scene is loading.
+        CurrentPhase = GamePhase.Init;
+        if (nextStageButton != null) nextStageButton.interactable = false;
+        if (SoundManager.Instance != null) SoundManager.Instance.PlaySwitchSE();
     }
 
     /// <summary>

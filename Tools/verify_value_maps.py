@@ -113,7 +113,7 @@ def main():
     parser.add_argument('--csv',type=Path,help='Optional original CSV for independent source comparison')
     args=parser.parse_args()
     manifest=json.loads((ROOT/'Docs/駒価値マップ_データ.json').read_text(encoding='utf-8'))
-    requested=set(args.stages) if args.stages else set(range(15,24))
+    requested=set(args.stages) if args.stages else set(range(7,16))
     unit_o=(RES/'AllyUnit/015.asset').read_text(encoding='utf-8-sig')
     assert field(unit_o,'unitName')=='O'
     assert tuple(int(field(unit_o,k)) for k in ('cost','maxHp','attackPower','skillTiming','skillType'))==(2,2,3,1,1)

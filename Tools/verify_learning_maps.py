@@ -84,17 +84,17 @@ def main():
         assert (number(data, "cost"), number(data, "skillTiming"),
                 number(data, "skillType"), number(data, "attackPower")) == (1, 1, skill, power)
     expected = {
-        9: (3, 2, [(1, 2, 2, 2), (3, 2, 2, 2)]),
-        10: (2, 4, [(2, 2, 2, 8)]),
-        11: (2, 3, [(2, 0, 3, 6)]),
-        12: (3, 2, [(1, 2, 4, 2), (3, 2, 2, 2)]),
-        13: (12, 5, [(2, 0, 3, 5), (2, 3, 5, 4)]),
-        14: (17, 5, [(2, 0, 5, 8), (1, 3, 3, 2), (4, 3, 2, 2)]),
+        1: (3, 2, [(1, 2, 2, 2), (3, 2, 2, 2)]),
+        2: (2, 4, [(2, 2, 2, 8)]),
+        3: (2, 3, [(2, 0, 3, 6)]),
+        4: (3, 2, [(1, 2, 4, 2), (3, 2, 2, 2)]),
+        5: (12, 5, [(2, 0, 3, 5), (2, 3, 5, 4)]),
+        6: (17, 5, [(2, 0, 5, 8), (1, 3, 3, 2), (4, 3, 2, 2)]),
     }
     if len(sys.argv) > 1:
         with open(sys.argv[1], encoding="utf-8-sig", newline="") as stream:
             rows = list(csv.reader(stream))
-        for n, start, column in [(9, 1, 3), (10, 1, 9), (11, 6, 3), (12, 11, 3), (13, 16, 3)]:
+        for n, start, column in [(1, 1, 3), (2, 1, 9), (3, 6, 3), (4, 11, 3), (5, 16, 3)]:
             hp, cost, enemies = expected[n]
             assert int(rows[start + 1][column + 5]) == hp
             assert int(rows[start + 3][column + 5]) == cost
@@ -113,7 +113,7 @@ def main():
         assert solution is not None, f"No solution: map{n}"
         assert solve(actual[0], actual[1] - 1, actual[2]) is None, f"Unexpected shorter solution: map{n}"
         print(json.dumps({"map": n, "solution": solution}, ensure_ascii=False))
-    for n, wrong in [(12, 1), (13, 0), (14, 0), (14, 2)]:
+    for n, wrong in [(4, 1), (5, 0), (6, 0), (6, 2)]:
         assert solve(*read_map(n), first_kill=wrong) is None, f"Unexpected first kill: map{n}/{wrong}"
     print("PASS: saved data, six solutions, minimum placement budgets, first-kill constraints.")
 

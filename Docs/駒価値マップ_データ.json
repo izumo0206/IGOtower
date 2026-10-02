@@ -1,6 +1,6 @@
 [
   {
-    "stage": 15,
+    "stage": 7,
     "label": "3A",
     "description": "範囲ダメージ駒をつかってみよう",
     "hp": 8,
@@ -33,7 +33,7 @@
     "csv_row": 23
   },
   {
-    "stage": 16,
+    "stage": 8,
     "label": "3B",
     "description": "一直線ダメージをつかってみよう",
     "hp": 10,
@@ -72,7 +72,7 @@
     "csv_row": 28
   },
   {
-    "stage": 17,
+    "stage": 9,
     "label": "4A",
     "description": "5回復してみよう",
     "hp": 6,
@@ -105,7 +105,7 @@
     "csv_row": 33
   },
   {
-    "stage": 18,
+    "stage": 10,
     "label": "4B",
     "description": "3ダメージ与えてみよう",
     "hp": 17,
@@ -132,7 +132,7 @@
     "csv_row": 38
   },
   {
-    "stage": 19,
+    "stage": 11,
     "label": "5A",
     "description": "ダメージを与えながら囲みに参加しよう",
     "hp": 12,
@@ -170,7 +170,7 @@
     "csv_row": 43
   },
   {
-    "stage": 20,
+    "stage": 12,
     "label": "6A",
     "description": "道を開けてから配置しよう",
     "hp": 11,
@@ -215,7 +215,7 @@
     "csv_row": 48
   },
   {
-    "stage": 21,
+    "stage": 13,
     "label": "復習",
     "description": "範囲ダメージと一直線ダメージ駒を両方使ってみよう",
     "hp": 18,
@@ -255,7 +255,7 @@
     "csv_row": 53
   },
   {
-    "stage": 22,
+    "stage": 14,
     "label": "復習",
     "description": "コスト駒復習",
     "hp": 22,
@@ -289,7 +289,7 @@
     "csv_row": 58
   },
   {
-    "stage": 23,
+    "stage": 15,
     "label": "復習",
     "description": "全新駒を使おう",
     "hp": 28,
