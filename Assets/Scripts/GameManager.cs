@@ -86,7 +86,11 @@ public class GameManager : MonoBehaviour
     private Vector2Int _pendingGridPos;
     public TutorialDialog tutorialDialog;
 
+    private Tile[] allTiles;
+
     public AudioClip _gameBGM;
+    public AudioClip _gameoverSound;
+    public AudioClip _gameclearSound;
     private void Awake()
     {
         if (Instance == null)
@@ -111,12 +115,13 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        allTiles = FindObjectsOfType<Tile>();
         InitializeGame();
         UpdateSelectionUI();
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlayBGMWithFadeIn(_gameBGM, 1.0f);
-        }
+            SoundManager.Instance.PlayBGMWithFadeIn(_gameBGM, 1.0f, true);
+        }  
     }
 
     private void Update()
@@ -360,6 +365,10 @@ public class GameManager : MonoBehaviour
             pendingUnit = null;
 
             TryConsumeCost(GetSelectedPlacementCost());
+            foreach (Tile tile in allTiles)
+            {
+                tile.SetHighlightActive(false);
+            }
             AlreadySet = true;
 
 
@@ -457,6 +466,12 @@ public class GameManager : MonoBehaviour
                     if (cutInText != null) cutInText.color = Color.white;
                     if (cutInPanel != null) StartCoroutine(ShowCutInRoutine());
                 }
+                foreach (Tile tile in allTiles)
+                {
+                    if(RuleSystem.Instance.CanPlaceAlly(tile.GridPosition) == 3){
+                        tile.SetHighlightActive(true);
+                    }
+                }
                 AlreadySet = false;
                 
                 break;
@@ -491,6 +506,10 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GamePhase.GameClear:
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlayBGMWithFadeIn(_gameclearSound, 0.5f, false);
+                }  
                 Debug.Log("GAME CLEAR!!");
                 GameSession.EnsureInstance().HandleBattleClear();
                 if (!TutorialManager.IsTutorialMode){
@@ -501,6 +520,10 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GamePhase.GameOver:
+                if (SoundManager.Instance != null)
+                {
+                    SoundManager.Instance.PlayBGMWithFadeIn(_gameoverSound, 0.5f, false);
+                }  
                 if (CameraShake.Instance != null)
                 {
                     CameraShake.Instance.Shake(0.5f, 0.5f);

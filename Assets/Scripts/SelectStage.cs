@@ -38,7 +38,7 @@ public class SelectStage : MonoBehaviour
 
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlayBGMWithFadeIn(_selectBGM, 1.0f);
+            SoundManager.Instance.PlayBGMWithFadeIn(_selectBGM, 1.0f, true);
         }
     }
 

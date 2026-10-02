@@ -11,6 +11,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private SpriteRenderer _renderer;
     [SerializeField] private Color _baseColor;
     [SerializeField] private Color _offsetColor;
+    public GameObject highlightFrame;
 
     // マスの座標
     public Vector2Int GridPosition { get; private set; }
@@ -33,5 +34,14 @@ public class Tile : MonoBehaviour
     {
         // TODO: 「すでにユニットがいるか」「四方が敵に囲まれているか」の判定を入れる
         return true; 
+    }
+
+    public void SetHighlightActive(bool isPlayerTurn)
+    {
+        if (highlightFrame != null)
+        {
+            // isPlayerTurn が true なら表示、false なら非表示になる
+            highlightFrame.SetActive(isPlayerTurn);
+        }
     }
 }

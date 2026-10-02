@@ -110,13 +110,17 @@ public class SoundManager : MonoBehaviour
         _isPlayingQueue = false;
     }
 
-    public void PlayBGMWithFadeIn(AudioClip bgmClip, float fadeDuration = 1.0f)
+    public void PlayBGMWithFadeIn(AudioClip bgmClip, float fadeDuration = 1.0f, bool isLoop = true)
     {
+        if (_bgmSource.clip == bgmClip && _bgmSource.isPlaying)
+        {
+            return; 
+        }
         if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
 
         _bgmSource.clip = bgmClip;
         
-        _bgmSource.loop = true; 
+        _bgmSource.loop = isLoop; 
         
         _bgmSource.Play();
         

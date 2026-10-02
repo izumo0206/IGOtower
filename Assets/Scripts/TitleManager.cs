@@ -10,7 +10,7 @@ public class TitleManager : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlayBGMWithFadeIn(_titleBGM, 1.0f);
+            SoundManager.Instance.PlayBGMWithFadeIn(_titleBGM, 1.0f, true);
         }
     }
 
