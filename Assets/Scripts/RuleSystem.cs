@@ -99,23 +99,27 @@ public class RuleSystem : MonoBehaviour
         // 2. すでに何か駒が置いてあれば配置不可
         if (_pieces.ContainsKey(pos)) return 1;
 
-        // 3. 四方を敵に囲まれている場合は配置不可
-        int enemyCount = 0;
+        // 3. 四方が敵か壁（盤外・穴）で塞がれている場合は配置不可
+        int blockedCount = 0;
         foreach (var dir in _directions)
         {
             Vector2Int neighborPos = pos + dir;
-            // 盤面の範囲内で、かつ敵ユニットが存在するか
+            if (!BoardManager.Instance.IsValidPosition(neighborPos))
+            {
+                blockedCount++;
+                continue;
+            }
+
             if (_pieces.TryGetValue(neighborPos, out Unit neighborUnit))
             {
                 if (neighborUnit.Type == UnitType.Enemy)
                 {
-                    enemyCount++;
+                    blockedCount++;
                 }
             }
         }
         
-        // 四方が敵 (4つの隣接マスすべてに敵がいる) なら配置不可
-        if (enemyCount >= 4)
+        if (blockedCount == 4)
         {
             return 2;
         }

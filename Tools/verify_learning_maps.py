@@ -51,6 +51,9 @@ def solve(initial_hp, budget, enemies, first_kill=None):
         for p in range(25):
             if occupied & (1 << p) or any(h > 0 and q == p for h, q in zip(hps, positions)):
                 continue
+            walls = int(p % 5 in (0, 4)) + int(p // 5 in (0, 4))
+            if walls + sum(h > 0 and p in nn for h, nn in zip(hps, neighbors)) == 4:
+                continue
             targets = [i for i, h in enumerate(hps) if h > 0 and p in neighbors[i]]
             # -1: A aimed away, -2: C. All directions with the same outcome collapse.
             for target in targets + [-1, -2]:

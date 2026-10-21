@@ -19,7 +19,7 @@ def field(text, key):
     return re.search(r'^  ' + key + r': (.+)$', text, re.M)[1]
 
 
-def load(n):
+def load(n, *, include_timing=False):
     lines = (RES / f'Stage/map{n}.txt').read_text(encoding='utf-8-sig').splitlines()
     hp, cost, roster = lines[0].split()
     grid = [list(map(int, row.split())) for row in lines[1:]][::-1]
@@ -34,8 +34,10 @@ def load(n):
     units = []
     for unit_id in roster.removeprefix('allies=').split(','):
         t = (RES / f'AllyUnit/{unit_id}.asset').read_text(encoding='utf-8-sig')
-        assert int(field(t, 'skillTiming')) == 1
-        units.append((field(t, 'unitName'), int(field(t, 'cost')), int(field(t, 'attackPower')), int(field(t, 'skillType'))))
+        timing = int(field(t, 'skillTiming'))
+        assert timing in ((1, 2) if include_timing else (1,))
+        unit = (field(t, 'unitName'), int(field(t, 'cost')), int(field(t, 'attackPower')), int(field(t, 'skillType')))
+        units.append(unit + (timing,) if include_timing else unit)
     return int(hp), int(cost), enemies, units
 
 
@@ -74,7 +76,8 @@ def solve(hp, cost, enemies, units, seconds=20):
         actions=[]; dedup=set()
         for p in range(25):
             if p in live or occupied & (1<<p):continue
-            if sum(p in nn and h>0 for nn,h in zip(neighbors,hps))>=4:continue
+            walls = int(p % 5 in (0, 4)) + int(p // 5 in (0, 4))
+            if walls + sum(p in nn and h>0 for nn,h in zip(neighbors,hps)) == 4:continue
             placed=occupied|(1<<p)
             for name,price,power,skill in units:
                 if price>remaining:continue

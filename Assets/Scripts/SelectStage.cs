@@ -53,6 +53,16 @@ public class SelectStage : MonoBehaviour
         FadeManager.Instance.TransitionToScene("MainScene");
     }
 
+    public void OnReturnToTitleClicked()
+    {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySwitchSE();
+        }
+
+        GameSession.EnsureInstance().ReturnToTitle();
+    }
+
     // Update is called once per frame
     void Update()
     {

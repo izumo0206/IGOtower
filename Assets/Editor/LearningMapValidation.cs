@@ -25,16 +25,17 @@ public static class LearningMapValidation
             game.Heal(-3);
             Require(game.CurrentHp == 5, "Negative healing must not cause damage.");
 
-            int[] expectedHp = { 3, 2, 2, 3, 12, 17, 8, 10, 6, 17, 12, 11, 18, 22, 28, 6, 10, 28 };
-            int[] expectedCost = { 2, 4, 3, 2, 5, 5, 3, 4, 5, 7, 5, 3, 5, 7, 7, 3, 4, 9 };
+            int[] expectedHp = { 3, 2, 2, 3, 12, 17, 8, 10, 6, 17, 12, 11, 18, 22, 28, 6, 10, 28, 35, 37, 76, 30 };
+            int[] expectedCost = { 2, 4, 3, 2, 5, 5, 3, 4, 5, 7, 5, 3, 5, 7, 7, 3, 4, 9, 7, 7, 7, 9 };
             string[] expectedAllies = { "AC", "AC", "AC", "AC", "AC", "AC",
-                "ABC", "ACK", "ACF", "ACO", "AC", "ABC", "ABCK", "ACFO", "ABCFKO", "ACG", "ACH", "ACGH" };
+                "ABC", "ACK", "ACF", "ACO", "AC", "ABC", "ABCK", "ACFO", "ABCFKO", "ACG", "ACH", "ACGH",
+                "ACD", "ACE", "ACDE", "ACDEGH" };
             var unitO = Resources.Load<AllyUnitData>("AllyUnit/015");
             Require(unitO != null && unitO.unitName == "O" && unitO.cost == 2 && unitO.maxHp == 2
                 && unitO.attackPower == 3 && unitO.skillTiming == SkillTiming.OnPlaced
                 && unitO.skillType == SkillType.AttackOneDir && unitO.howToPut == HowToPut.None
                 && unitO.prefab != null, "Incorrect O data.");
-            for (int stage = 1; stage <= 18; stage++)
+            for (int stage = 1; stage <= expectedHp.Length; stage++)
             {
                 var inspectorAllies = new List<AllyUnitData> { Resources.Load<AllyUnitData>("AllyUnit/002") };
                 game.allyUnits = inspectorAllies;
@@ -60,7 +61,7 @@ public static class LearningMapValidation
             try { board.ParseMapData("2 3 allies=does-not-exist\n1"); }
             catch (FormatException) { rejected = true; }
             Require(rejected, "Invalid roster must be rejected.");
-            Debug.Log("LearningMapValidation PASS: 18 maps, per-map rosters, O, enemy references, uncapped healing, invalid roster.");
+            Debug.Log("LearningMapValidation PASS: 22 maps, per-map rosters, O, enemy references, uncapped healing, invalid roster.");
         }
         finally { UnityEngine.Object.DestroyImmediate(root); }
     }

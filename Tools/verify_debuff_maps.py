@@ -37,7 +37,8 @@ def solve(hp, cost, enemies, units, seconds=20):
         for p in range(25):
             if occupied & (1 << p) or any(h > 0 and e == p for e,h in zip(positions,hps)):
                 continue
-            if sum(h > 0 and p in nn for h,nn in zip(hps,neighbors)) == 4:
+            walls = int(p % 5 in (0, 4)) + int(p // 5 in (0, 4))
+            if walls + sum(h > 0 and p in nn for h,nn in zip(hps,neighbors)) == 4:
                 continue
             for name, price, power, skill in units:
                 if price > remaining:

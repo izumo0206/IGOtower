@@ -13,6 +13,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _hpText;
     [SerializeField] private TextMeshProUGUI _costText;
     [SerializeField] private Button _endTurnButton;
+    [SerializeField] private Outline _endTurnHighlightFrame;
 
 
     private void Start()
@@ -22,6 +23,33 @@ public class UIManager : MonoBehaviour
         {
             _endTurnButton.onClick.AddListener(OnEndTurnButtonClicked);
         }
+        RefreshEndTurnButton();
+    }
+
+    private void LateUpdate()
+    {
+        RefreshEndTurnButton();
+    }
+
+    private void RefreshEndTurnButton()
+    {
+        bool canEndTurn = GameManager.Instance != null && GameManager.Instance.CanEndPlayerTurn;
+        if (_endTurnButton != null)
+            _endTurnButton.interactable = canEndTurn;
+
+        if (_endTurnHighlightFrame != null)
+        {
+            bool showFrame = _endTurnButton != null && _endTurnButton.isActiveAndEnabled
+                && _endTurnButton.IsInteractable();
+            if (_endTurnHighlightFrame.enabled != showFrame)
+                _endTurnHighlightFrame.enabled = showFrame;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_endTurnButton != null)
+            _endTurnButton.onClick.RemoveListener(OnEndTurnButtonClicked);
     }
 
     private void Update()
@@ -39,15 +67,16 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void OnEndTurnButtonClicked()
     {
+        if (GameManager.Instance == null || !GameManager.Instance.CanEndPlayerTurn
+            || _endTurnButton == null || !_endTurnButton.IsInteractable()) return;
+
         if (SoundManager.Instance != null)
         {
             SoundManager.Instance.PlayButtonSE();
         }
-        if (GameManager.Instance != null)
-        {
-             // プレイヤーの配置が終わり、ターン終了を宣言して敵フェーズへ
-            GameManager.Instance.EndPlayerTurn();
-        }
+        // 配置前・配置後のどちらからでもターンを終了できる。
+        GameManager.Instance.EndPlayerTurn();
+        RefreshEndTurnButton();
     }
 
 }

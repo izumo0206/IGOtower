@@ -20,6 +20,9 @@ public sealed class InGameMenuController : MonoBehaviour
     [SerializeField] private Button menuButton;
     [SerializeField] private Button closeButton;
     [SerializeField] private Button returnToMenuButton;
+    [Header("Title debug (optional)")]
+    [SerializeField] private Button clearCacheButton;
+    [SerializeField] private TextMeshProUGUI cacheClearStatusText;
 
     private void Awake()
     {
@@ -31,6 +34,8 @@ public sealed class InGameMenuController : MonoBehaviour
 
         if (returnToMenuButton != null)
             returnToMenuButton.onClick.AddListener(ReturnToMenu);
+        if (clearCacheButton != null)
+            clearCacheButton.onClick.AddListener(ClearCache);
 
         if (volumeSlider != null)
         {
@@ -55,6 +60,8 @@ public sealed class InGameMenuController : MonoBehaviour
 
         if (returnToMenuButton != null)
             returnToMenuButton.onClick.RemoveListener(ReturnToMenu);
+        if (clearCacheButton != null)
+            clearCacheButton.onClick.RemoveListener(ClearCache);
 
         if (volumeSlider != null)
             volumeSlider.onValueChanged.RemoveListener(SetMasterVolume);
@@ -94,6 +101,15 @@ public sealed class InGameMenuController : MonoBehaviour
     public void SetMasterVolume(float volume)
     {
         SoundManager.SetMasterVolume(volume);
+    }
+
+    // 画像や音量設定ではなく、チュートリアル・ステージの進行データを初期化する。
+    public void ClearCache()
+    {
+        GameSession.EnsureInstance().ResetAllProgress();
+        if (cacheClearStatusText != null)
+            cacheClearStatusText.text = "初期化しました。\nゲーム開始でチュートリアルに戻ります。";
+        if (SoundManager.Instance != null) SoundManager.Instance.PlayButtonSE();
     }
 
     public void RefreshStageName()

@@ -54,6 +54,10 @@ public class GameManager : MonoBehaviour
     public bool AlreadySet = false;
 
     public GamePhase CurrentPhase { get; private set; }
+    public bool CanEndPlayerTurn => CurrentPhase == GamePhase.PlayerTurn
+        && currentPlacePhase == PlacementPhase.SelectingCell
+        && (!TutorialManager.IsTutorialMode || (TutorialManager.Instance != null
+            && TutorialManager.Instance.AllowsEndTurn && AlreadySet));
 
     public GameObject testPrefab;
 
@@ -126,6 +130,13 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        if (TutorialManager.IsTutorialMode && (TutorialManager.Instance == null
+            || !TutorialManager.Instance.AllowsPlacement))
+        {
+            if (highlightSquareAble != null) highlightSquareAble.SetActive(false);
+            if (highlightSquareUnable != null) highlightSquareUnable.SetActive(false);
+            return;
+        }
         HighLight();
         if(CurrentPhase == GamePhase.PlayerTurn){
             if (Input.GetMouseButtonDown(0))
@@ -330,6 +341,8 @@ public class GameManager : MonoBehaviour
 
     public void OnDirectionSelected(UnitDirection dir)
     {
+        if (TutorialManager.IsTutorialMode && (TutorialManager.Instance == null
+            || !TutorialManager.Instance.AllowsPlacement)) return;
         if(pendingUnit != null)
         {
             
@@ -568,7 +581,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void EndPlayerTurn()
     {
-        if (CurrentPhase != GamePhase.PlayerTurn) return;
+        if (!CanEndPlayerTurn) return;
 
         // 味方のスキル発動フェーズへ移行（今回は仮で直接敵ターンに行くなどの処理はChangePhaseに委譲）
 
