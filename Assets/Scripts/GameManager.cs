@@ -55,6 +55,7 @@ public class GameManager : MonoBehaviour
 
     public GamePhase CurrentPhase { get; private set; }
     public bool CanEndPlayerTurn => CurrentPhase == GamePhase.PlayerTurn
+        && (tutorialDialog == null || !tutorialDialog.BlocksGameplayInput)
         && currentPlacePhase == PlacementPhase.SelectingCell
         && (!TutorialManager.IsTutorialMode || (TutorialManager.Instance != null
             && TutorialManager.Instance.AllowsEndTurn && AlreadySet));
@@ -130,8 +131,9 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (TutorialManager.IsTutorialMode && (TutorialManager.Instance == null
-            || !TutorialManager.Instance.AllowsPlacement))
+        if ((tutorialDialog != null && tutorialDialog.BlocksGameplayInput)
+            || (TutorialManager.IsTutorialMode && (TutorialManager.Instance == null
+            || !TutorialManager.Instance.AllowsPlacement)))
         {
             if (highlightSquareAble != null) highlightSquareAble.SetActive(false);
             if (highlightSquareUnable != null) highlightSquareUnable.SetActive(false);
@@ -341,6 +343,7 @@ public class GameManager : MonoBehaviour
 
     public void OnDirectionSelected(UnitDirection dir)
     {
+        if (tutorialDialog != null && tutorialDialog.BlocksGameplayInput) return;
         if (TutorialManager.IsTutorialMode && (TutorialManager.Instance == null
             || !TutorialManager.Instance.AllowsPlacement)) return;
         if(pendingUnit != null)
@@ -450,6 +453,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ShowCutInRoutine()
     {
+        if (tutorialDialog != null && tutorialDialog.IsConversationVisible) yield break;
         if (PlayerPrefs.GetInt("IsTutorialCleared", 0) == 0)
         {
             yield break;
@@ -659,6 +663,7 @@ public class GameManager : MonoBehaviour
 
     public void NextPiece()
     {
+        if (tutorialDialog != null && tutorialDialog.BlocksGameplayInput) return;
         if (!TutorialManager.IsTutorialMode && allyUnits.Count > 0){
             currentIndex = (currentIndex + 1) % allyUnits.Count;
             UpdateSelectionUI();
@@ -666,6 +671,7 @@ public class GameManager : MonoBehaviour
     }
     public void PrevPiece()
     {
+        if (tutorialDialog != null && tutorialDialog.BlocksGameplayInput) return;
         if (!TutorialManager.IsTutorialMode && allyUnits.Count > 0){
             currentIndex--;
             if(currentIndex < 0)

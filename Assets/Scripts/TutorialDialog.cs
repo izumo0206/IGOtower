@@ -16,6 +16,15 @@ public class TutorialDialog : MonoBehaviour
     [SerializeField] private GameObject instructionPanel;
     [SerializeField] private TextMeshProUGUI instructionTitle;
     [SerializeField] private TextMeshProUGUI instructionText;
+    [Header("新しい駒のミニ解説")]
+    [SerializeField] private GameObject unitOverviewPanel;
+    [SerializeField] private Image unitOverviewImage;
+    [SerializeField] private TextMeshProUGUI unitOverviewTitle;
+    [SerializeField] private TextMeshProUGUI unitOverviewStats;
+    [SerializeField] private TextMeshProUGUI unitOverviewAdvice;
+    [SerializeField] private RectTransform speechBubble;
+    [SerializeField] private RectTransform navigatorName;
+    [SerializeField] private RectTransform continuePrompt;
     [Header("HPへの注目")]
     [SerializeField] private RectTransform hpFocusTarget;
     [SerializeField] private RectTransform hpFocusOverlay;
@@ -24,6 +33,10 @@ public class TutorialDialog : MonoBehaviour
 
     private readonly Vector3[] _hpCorners = new Vector3[4];
     private Canvas _hpCanvas;
+    private bool _showingUnitOverview;
+    private Vector2 _normalBubbleSize;
+    private Vector2 _normalNamePosition;
+    private Vector2 _normalPromptPosition;
 
     private bool _isNextPressed;
     private int _shownFrame;
@@ -34,6 +47,9 @@ public class TutorialDialog : MonoBehaviour
 
     private void Awake()
     {
+        if (speechBubble != null) _normalBubbleSize = speechBubble.sizeDelta;
+        if (navigatorName != null) _normalNamePosition = navigatorName.anchoredPosition;
+        if (continuePrompt != null) _normalPromptPosition = continuePrompt.anchoredPosition;
         if (advanceButton != null) advanceButton.onClick.AddListener(OnClickNextButton);
     }
 
@@ -44,6 +60,7 @@ public class TutorialDialog : MonoBehaviour
 
     public void Show(string message, NavigatorExpression expression = NavigatorExpression.Speaking)
     {
+        RestoreUnitOverview();
         SetHpFocus(false);
         gameObject.SetActive(true);
         instructionPanel.SetActive(false);
@@ -56,8 +73,25 @@ public class TutorialDialog : MonoBehaviour
         _shownFrame = Time.frameCount;
     }
 
+    public void ShowUnitIntroduction(AllyUnitData unit, string advice)
+    {
+        Show(string.Empty, NavigatorExpression.Speaking);
+        _showingUnitOverview = true;
+        speechBubble.sizeDelta = new Vector2(_normalBubbleSize.x, 560f);
+        navigatorName.anchoredPosition = new Vector2(_normalNamePosition.x, 220f);
+        continuePrompt.anchoredPosition = new Vector2(_normalPromptPosition.x, -230f);
+        messageText.gameObject.SetActive(false);
+        unitOverviewPanel.SetActive(true);
+        unitOverviewImage.sprite = unit.unitSprite;
+        unitOverviewTitle.text = $"新しい仲間：ネコ{unit.unitName}";
+        // 実際の駒データを表示し、能力調整後の説明の食い違いを防ぐ。
+        unitOverviewStats.text = unit.GetDescription();
+        unitOverviewAdvice.text = advice;
+    }
+
     public void ShowInstruction(string title, string instruction, bool focusHp = false)
     {
+        RestoreUnitOverview();
         gameObject.SetActive(true);
         conversationPanel.SetActive(false);
         instructionPanel.SetActive(true);
@@ -68,9 +102,21 @@ public class TutorialDialog : MonoBehaviour
 
     public void Hide()
     {
+        RestoreUnitOverview();
         SetHpFocus(false);
         conversationPanel.SetActive(false);
         instructionPanel.SetActive(false);
+    }
+
+    private void RestoreUnitOverview()
+    {
+        if (unitOverviewPanel != null) unitOverviewPanel.SetActive(false);
+        if (!_showingUnitOverview) return;
+        _showingUnitOverview = false;
+        speechBubble.sizeDelta = _normalBubbleSize;
+        navigatorName.anchoredPosition = _normalNamePosition;
+        continuePrompt.anchoredPosition = _normalPromptPosition;
+        messageText.gameObject.SetActive(true);
     }
 
     public void OnClickNextButton()

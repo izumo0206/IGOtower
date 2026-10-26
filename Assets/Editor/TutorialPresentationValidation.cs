@@ -24,7 +24,9 @@ public static class TutorialPresentationValidation
             var dialog = roots.SelectMany(r => r.GetComponentsInChildren<TutorialDialog>(true)).Single();
             var data = new SerializedObject(dialog);
             foreach (string field in new[] { "messageText", "conversationPanel", "navigatorImage", "advanceButton",
-                "instructionPanel", "instructionTitle", "instructionText", "hpFocusTarget", "hpFocusOverlay" })
+                "instructionPanel", "instructionTitle", "instructionText", "hpFocusTarget", "hpFocusOverlay",
+                "unitOverviewPanel", "unitOverviewImage", "unitOverviewTitle", "unitOverviewStats", "unitOverviewAdvice",
+                "speechBubble", "navigatorName", "continuePrompt" })
                 Require(data.FindProperty(field).objectReferenceValue != null, "Missing " + field);
             var expressions = data.FindProperty("expressions");
             Require(expressions.arraySize == 5, "Expected five navigator expressions");
@@ -50,6 +52,37 @@ public static class TutorialPresentationValidation
                 "Conversation must cover the menu while instructions remain below it");
             Require(conversationCanvas.GetComponent<GraphicRaycaster>() != null,
                 "Conversation must intercept taps above the menu");
+            var unitCard = (GameObject)data.FindProperty("unitOverviewPanel").objectReferenceValue;
+            Require(!unitCard.activeSelf && unitCard.GetComponentInParent<Canvas>() == conversationCanvas,
+                "Unit card must start hidden inside the navigator conversation canvas");
+            var introduction = roots.SelectMany(r => r.GetComponentsInChildren<StageUnitIntroduction>(true)).Single();
+            var introductionData = new SerializedObject(introduction);
+            var introductions = introductionData.FindProperty("introductions");
+            string[] introductionStages = { "map7", "map8", "map9", "map10", "map16", "map17", "map19", "map20" };
+            string[] introductionUnits = { "002", "011", "006", "015", "007", "008", "004", "005" };
+            Require(introductions.arraySize == introductionStages.Length, "Missing new-unit introduction");
+            for (int i = 0; i < introductions.arraySize; i++)
+            {
+                var entry = introductions.GetArrayElementAtIndex(i);
+                Require(entry.FindPropertyRelative("stageName").stringValue == introductionStages[i],
+                    "Introduction must target the unit's first main-game stage");
+                var unit = (AllyUnitData)entry.FindPropertyRelative("unit").objectReferenceValue;
+                Require(unit != null && unit.unitId == introductionUnits[i] && unit.unitSprite != null,
+                    "Introduction must reference the real unit and its visual");
+                Require(!string.IsNullOrWhiteSpace(entry.FindPropertyRelative("advice").stringValue),
+                    "Missing navigator advice");
+            }
+            Require(introductionData.FindProperty("dialog").objectReferenceValue == dialog,
+                "Introduction must reuse the tutorial navigator UI");
+            var stageTutorials = introductionData.FindProperty("stageTutorials");
+            Require(stageTutorials.arraySize == 1, "Missing placement-rule tutorial");
+            var placementTutorial = stageTutorials.GetArrayElementAtIndex(0);
+            Require(placementTutorial.FindPropertyRelative("stageName").stringValue == "map12"
+                && placementTutorial.FindPropertyRelative("tutorialId").stringValue == "surrounded-placement"
+                && !string.IsNullOrWhiteSpace(placementTutorial.FindPropertyRelative("message").stringValue),
+                "Surrounded-placement explanation must target map12 and have its own read-state ID");
+            var game = roots.SelectMany(r => r.GetComponentsInChildren<GameManager>(true)).Single();
+            Require(game.tutorialDialog == dialog, "Gameplay must respect the introduction input blocker");
             var closeMenu = (Button)menuData.FindProperty("closeButton").objectReferenceValue;
             Require(closeMenu != null && closeMenu.GetComponentInParent<Canvas>() == menuCanvas,
                 "Close button must be on the foreground menu canvas");

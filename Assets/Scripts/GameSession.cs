@@ -130,6 +130,20 @@ public class GameSession : MonoBehaviour
         return Profile.HasStageClear(stageName);
     }
 
+    public void MarkUnitIntroductionSeen(string unitId)
+    {
+        if (string.IsNullOrEmpty(unitId) || Profile.HasSeenUnitIntroduction(unitId)) return;
+        Profile.seenUnitIntroductions.Add(unitId);
+        SaveProfile();
+    }
+
+    public void MarkStageTutorialSeen(string tutorialId)
+    {
+        if (string.IsNullOrEmpty(tutorialId) || Profile.HasSeenStageTutorial(tutorialId)) return;
+        Profile.seenStageTutorials.Add(tutorialId);
+        SaveProfile();
+    }
+
     public void HandleBattleClear()
     {
         if (Mode == GameMode.Tutorial)

@@ -14,8 +14,12 @@ public class GameProfile
     public int version = CurrentVersion;
     public bool tutorialCleared;
     public List<string> clearedStages = new List<string>();
+    public List<string> seenUnitIntroductions = new List<string>();
+    public List<string> seenStageTutorials = new List<string>();
 
     public bool HasStageClear(string stageName) => clearedStages.Contains(stageName);
+    public bool HasSeenUnitIntroduction(string unitId) => seenUnitIntroductions.Contains(unitId);
+    public bool HasSeenStageTutorial(string tutorialId) => seenStageTutorials.Contains(tutorialId);
 }
 
 public static class GameProfileStore
@@ -88,6 +92,8 @@ public static class GameProfileStore
     private static void Normalize(GameProfile profile)
     {
         profile.clearedStages = profile.clearedStages ?? new List<string>();
+        profile.seenUnitIntroductions = profile.seenUnitIntroductions ?? new List<string>();
+        profile.seenStageTutorials = profile.seenStageTutorials ?? new List<string>();
     }
 
     private static void ImportLegacyProgress(GameProfile profile)
